@@ -182,7 +182,19 @@ const MainContent = ({ activeTab }) => {
         <div className="section-card">
           <h2>Voting Rules</h2>
           <div className="section-content">
-            <p>Voting rules configuration will go here...</p>
+             <label className="radio-option">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="private"
+                  checked={formData.visibility === "private"}
+                  onChange={(e) => handleChange("visibility", e.target.value)}
+                />
+                <div className="radio-text">
+                  <h3>Private</h3>
+                  <p>Only people with the password can access the poll.</p>
+                </div>
+              </label>
           </div>
         </div>
       )}
