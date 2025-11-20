@@ -1,14 +1,18 @@
-import InfoPlaceholder from "../info/inf";
-
+// ===== PollQuestionInput.jsx =====
 const PollQuestionInput = ({ value, onChange }) => {
   return (
-    <InfoPlaceholder
-      label="Poll Question"
-      placeholder="What's your question?"
-      required={true}
-      value={value}
-      onChange={onChange}
-    />
+    <div className="form-group">
+      <label className="form-label">
+        Poll Question <span style={{ color: "#ef4444" }}>*</span>
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={onChange}
+        placeholder="What's your question?"
+        className="form-control"
+      />
+    </div>
   );
 };
 

@@ -404,15 +404,98 @@ body {
 .btn-delete:hover {
   background-color: #b91c1c;
 }
+/* MOBILE SIDEBAR TOGGLE */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  padding: 0.625rem 1rem;
+  background-color: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .main-wrapper {
-    flex-direction: column;
+/* DESKTOP - Show sidebar normally */
+@media (min-width: 769px) {
+  .sidebar-toggle {
+    display: none !important;
   }
 
   .sidebar {
+    display: flex !important;
+    width: 256px;
+    min-height: 700px;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: var(--white);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .main-wrapper {
+    display: flex;
+    gap: 2rem;
+    max-width: 1536px;
     width: 100%;
+    flex-direction: row;
+  }
+
+  .main-content {
+    flex: 1;
+  }
+}
+
+/* TABLET - Collapsible sidebar */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .main-wrapper {
+    gap: 1.5rem;
+  }
+}
+
+/* MOBILE - Full width collapsible sidebar */
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: block !important;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: 75%;
+    height: 100vh;
+    background-color: var(--white);
+    border-radius: 0;
+    border: none;
+    padding: 1rem;
+    z-index: 999;
+    transition: left 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar.closed {
+    left: -100%;
+  }
+
+  .main-wrapper {
+    flex-direction: column;
+    padding-top: 3rem;
   }
 
   .header-section {
@@ -422,5 +505,28 @@ body {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .save-btn {
+    width: 100%;
+  }
+}
+
+/* SMALL MOBILE */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 85%;
+  }
+
+  .layout-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .header-text h1 {
+    font-size: 1.5rem;
+  }
+
+  .section-card h2 {
+    font-size: 1.125rem;
   }
 }

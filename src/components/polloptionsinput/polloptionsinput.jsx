@@ -1,45 +1,31 @@
-import "../OptionInput/OptionInput";
-
-const PollOptionsInput = ({ options, setOptions }) => {
-  const handleOptionChange = (index, value) => {
-    const newOptions = [...options];
-    newOptions[index] = value;
-    setOptions(newOptions);
-  };
-
-  const handleRemoveOption = (index) => {
-    if (options.length > 2) {
-      const newOptions = options.filter((_, i) => i !== index);
-      setOptions(newOptions);
-    }
-  };
-
-  const handleAddOption = () => {
-    setOptions([...options, '']);
-  };
-
+// ===== PollOptionsInput.jsx =====
+const PollOptionsInput = ({ options, onOptionChange, onRemoveOption }) => {
   return (
-    <div className="mb-3">
-      <label className="form-label fw-semibold">Options</label>
-      
-      {options.map((option, index) => (
-        <OptionInput
-          key={index}
-          value={option}
-          onChange={handleOptionChange}
-          onRemove={handleRemoveOption}
-          index={index}
-          showRemove={options.length > 2}
-        />
-      ))}
-      
-      <button
-        type="button"
-        className="btn btn-link text-primary p-0 mt-2"
-        onClick={handleAddOption}
-      >
-        ➕ Add Option
-      </button>
+    <div className="options-container">
+      <label className="form-label">Options</label>
+      <div>
+        {options.map((option, index) => (
+          <div key={index} className="option-item">
+            <input
+              type="text"
+              value={option}
+              onChange={(e) => onOptionChange(index, e.target.value)}
+              placeholder="Enter an answer option"
+              className="form-control option-input"
+            />
+            {options.length > 2 && (
+              <button
+                type="button"
+                onClick={() => onRemoveOption(index)}
+                className="remove-option-btn"
+                title="Remove option"
+              >
+                🗑️
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
