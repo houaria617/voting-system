@@ -1,0 +1,210 @@
+/* Poll Landing Page Layout */
+.poll-landing-page {
+    min-height: 100vh;
+    background-color: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Page Header */
+.page-header {
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo-icon {
+    color: #3b82f6;
+}
+
+.logo-text {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.back-link {
+    font-size: 0.875rem;
+    color: #111827;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0.5rem 1rem;
+}
+
+.back-link:hover {
+    color: #3b82f6;
+}
+
+/* Main Content */
+.poll-landing-main {
+    flex: 1;
+    padding: 3rem 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.poll-landing-container {
+    max-width: 700px;
+    width: 100%;
+}
+
+/* Page Intro */
+.page-intro {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+.page-subtitle {
+    font-size: 1rem;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* Poll Question Card */
+.poll-question-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    padding: 2.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.question-header {
+    margin-bottom: 2rem;
+}
+
+.question-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.question-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Options List */
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Submit Button */
+.submit-button {
+    width: 100%;
+    padding: 1rem;
+    background-color: #e5e7eb;
+    color: #6b7280;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: not-allowed;
+    transition: all 0.2s;
+}
+
+.submit-button:not(:disabled) {
+    background-color: #3b82f6;
+    color: white;
+    cursor: pointer;
+}
+
+.submit-button:not(:disabled):hover {
+    background-color: #2563eb;
+}
+
+/* Poll Actions */
+.poll-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-button {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.action-button-secondary {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.action-button-secondary:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.action-button-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.action-button-primary:hover {
+    background-color: #2563eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .poll-landing-main {
+        padding: 2rem 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .poll-question-card {
+        padding: 1.5rem;
+    }
+
+    .question-title {
+        font-size: 1.25rem;
+    }
+
+    .poll-actions {
+        flex-direction: column;
+    }
+
+    .page-header {
+        padding: 1rem;
+    }
+
+    .logo-text {
+        font-size: 1rem;
+    }
+}
