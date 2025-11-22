@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart3, Plus, Trash2, ChevronDown } from 'lucide-react';
 import Swal from 'sweetalert2';
-
+import { useNavigate } from "react-router-dom";
 const CreatePollPage = () => {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
@@ -28,8 +28,9 @@ const CreatePollPage = () => {
     newOptions[index] = value;
     setOptions(newOptions);
   };
-
+const navigate = useNavigate();
   const handleSubmit = async () => {
+  
   if (question.trim() === '') {
     setMissingQuestion(true);
     setmissingoptions(options.map(opt => opt.trim() === ''));
@@ -58,6 +59,8 @@ const CreatePollPage = () => {
     allowMultipleVotes,
     expirationDate: hasExpiration ? expirationDate : null
   };
+  console.log('Poll Created:', pollData);
+  navigate('/configure-poll', { state: { pollData } });
 
   
 //   try {

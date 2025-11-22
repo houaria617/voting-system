@@ -1,7 +1,10 @@
 // ===== MainContent/MainContent.jsx =====
 import { useState } from "react";
-
+import { useLocation, useNavigate } from "react-router-dom";
 const MainContent = ({ activeTab }) => {
+  const { state } = useLocation();
+  const pollData = state?.pollData || { options: [] }; // Fallback to avoid crash
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     anonymity: "fully-anonymous",
     visibility: "public",
@@ -10,14 +13,91 @@ const MainContent = ({ activeTab }) => {
     password: "",
     enableComments: true,
     showResults: false,
+    allowedVoters: [], // Stores emails
+    allowedDomains: [], // Stores domains like @gmail.com
+    minSelectionLimit: 1,
+    selectionLimit: 1,
     selectedTheme: "corporate",
     backgroundImage: "",
-    logo: "",  // ADD THIS
-    fontStyle: "inter",  // ADD THIS
-    primaryColor: "#137fec",  // ADD THIS
-    secondaryColor: "#ffffff", 
+    logo: "",
+    fontStyle: "inter",
+    primaryColor: "#137fec",
+    secondaryColor: "#ffffff",
   });
 
+  // --- EMAIL STATE ---
+  const [newEmail, setNewEmail] = useState("");
+  const [emailError, setEmailError] = useState(false); // Controls the red border
+
+  // --- DOMAIN STATE ---
+  const [newDomain, setNewDomain] = useState("");
+
+  // 1. Handle Email Input
+  const handleEmailChange = (e) => {
+    setNewEmail(e.target.value);
+    if (emailError) setEmailError(false); // Clear error when user types
+  };
+
+  // 2. Add Email with Validation
+  const handleAddEmail = () => {
+    if (!newEmail.trim()) return;
+
+    if (!isValidEmail(newEmail)) {
+      setEmailError(true); // Trigger red border
+      return;
+    }
+
+    // Check duplicates
+    if (!formData.allowedVoters.includes(newEmail)) {
+      setFormData(prev => ({
+        ...prev,
+        allowedVoters: [...prev.allowedVoters, newEmail]
+      }));
+    }
+    setNewEmail("");
+    setEmailError(false);
+  };
+
+  // 3. Remove Email
+  const removeEmail = (emailToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      allowedVoters: prev.allowedVoters.filter(email => email !== emailToRemove)
+    }));
+  };
+
+  // 4. Add Domain
+  const handleAddDomain = () => {
+    let domain = newDomain.trim();
+    if (!domain) return;
+
+    // Ensure it starts with @
+    if (!domain.startsWith("@")) {
+      domain = "@" + domain;
+    }
+
+    if (!formData.allowedDomains.includes(domain)) {
+      setFormData(prev => ({
+        ...prev,
+        allowedDomains: [...prev.allowedDomains, domain]
+      }));
+    }
+    setNewDomain("");
+  };
+
+  // 5. Remove Domain
+  const removeDomain = (domainToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      allowedDomains: prev.allowedDomains.filter(d => d !== domainToRemove)
+    }));
+  };
+
+  // Regex Helper
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
   // ADD THIS THEMES ARRAY HERE
   const themes = [
     {
@@ -58,7 +138,7 @@ const MainContent = ({ activeTab }) => {
     }
   ];
 
-  const handleChange = (field, value) => {
+    const handleChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -66,17 +146,32 @@ const MainContent = ({ activeTab }) => {
   };
 
   const handleSave = () => {
+    handlePreview(); 
     console.log("Saving configuration:", formData);
     alert("Configuration saved successfully!");
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this poll?")) {
-      console.log("Poll deleted");
-    }
+    if (window.confirm("Are you sure you want to delete this poll?")) return;
   };
 
+// handle the preview function
+   const handlePreview = () => {
+    // Combine the Questions (pollData) with the Settings (formData)
+    const finalPollData = {
+      ...pollData, // Contains title, questions, options from previous page
+      ...formData, // Contains the rules, theme, colors you just set
+    };
+
+    console.log("Sending to preview:", finalPollData);
+
+    // Navigate to the preview route and pass the data
+    navigate("/configure-poll", { state: { pollData: finalPollData } });
+  };
+
+
   return (
+    
     <main className="main-content">
       <div className="header-section">
         <div className="header-text">
@@ -88,10 +183,10 @@ const MainContent = ({ activeTab }) => {
         </button>
       </div>
 
-      {/* GENERAL TAB */}
+{/* GENERAL TAB */}
       {activeTab === "General" && (
         <>
-          {/* ANONYMITY SECTION */}
+          {/* Anonymity */}
           <div className="section-card">
             <h2>Anonymity</h2>
             <div className="section-content">
@@ -105,13 +200,9 @@ const MainContent = ({ activeTab }) => {
                 />
                 <div className="radio-text">
                   <h3>Fully Anonymous</h3>
-                  <p>
-                    Voters' identities will be hidden from everyone, including
-                    the poll creator.
-                  </p>
+                  <p>Voters' identities will be hidden.</p>
                 </div>
               </label>
-
               <label className="radio-option">
                 <input
                   type="radio"
@@ -128,7 +219,7 @@ const MainContent = ({ activeTab }) => {
             </div>
           </div>
 
-          {/* VISIBILITY SECTION */}
+          {/* Visibility */}
           <div className="section-card">
             <h2>Visibility</h2>
             <div className="section-content">
@@ -156,7 +247,7 @@ const MainContent = ({ activeTab }) => {
                 />
                 <div className="radio-text">
                   <h3>Private</h3>
-                  <p>Only people with the password can access the poll.</p>
+                  <p>Only people with the password or on the allowed list can access.</p>
                 </div>
               </label>
 
@@ -174,82 +265,328 @@ const MainContent = ({ activeTab }) => {
               )}
             </div>
           </div>
+
+          {/* === ALLOWED VOTERS (TABLE VERSION) === */}
+          {formData.visibility === "private" && (
+            <div className="section-card">
+              <h2>Allowed Access</h2>
+              <div className="section-content">
+                
+                {/* 1. Email Input */}
+                <label className="form-label">Add Allowed Email</label>
+                <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="user@example.com"
+                    style={{ 
+                      flex: 1, 
+                      borderColor: emailError ? "#ef4444" : "",
+                      backgroundColor: emailError ? "#fef2f2" : "" 
+                    }}
+                    value={newEmail}
+                    onChange={(e) => {
+                      setNewEmail(e.target.value);
+                      if(emailError) setEmailError(false);
+                    }}
+                  />
+                  <button onClick={handleAddEmail} className="btn btn-small"  style={{
+            padding: "0.625rem 1rem",
+            backgroundColor: "#e5e7eb",
+            color: "#111827",
+            border: "1px solid #d1d5db",
+            borderRadius: "0.5rem",
+            fontWeight: "600",
+            fontSize: "0.875rem",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            whiteSpace: "nowrap",
+          }}>
+                    Add
+                  </button>
+                </div>
+                {emailError && <p style={{ color: "#ef4444", fontSize: "0.8rem" }}>⚠️ Invalid email format</p>}
+
+                {/* 2. THE EMAIL TABLE */}
+                {formData.allowedVoters.length > 0 && (
+                  <div style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+                      <thead style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                        <tr>
+                          <th style={{ padding: "10px 15px", textAlign: "left", color: "#374151" }}>Email Address</th>
+                          <th style={{ padding: "10px 15px", textAlign: "right", color: "#374151", width: "80px" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formData.allowedVoters.map((email, index) => (
+                          <tr key={index} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                            <td style={{ padding: "10px 15px" }}>{email}</td>
+                            <td style={{ padding: "10px 15px", textAlign: "right" }}>
+                              <button 
+                                onClick={() => removeEmail(email)}
+                                style={{ 
+                                  backgroundColor: "#fee2e2", 
+                                  color: "#dc2626", 
+                                  border: "none", 
+                                  borderRadius: "4px", 
+                                  padding: "4px 8px", 
+                                  cursor: "pointer",
+                                  fontSize: "0.8rem",
+                                  fontWeight: "600"
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                         <tfoot style={{ backgroundColor: "#f9fafb", borderTop: "2px solid #e5e7eb" }}>
+                        <tr>
+                          <td style={{ padding: "10px 15px", fontWeight: "bold", color: "#374151" }}>
+                            Total Allowed Voters:
+                          </td>
+                          <td style={{ padding: "10px 15px", textAlign: "right", fontWeight: "bold", color: "#137fec" }}>
+                            {formData.allowedVoters.length}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+                {formData.allowedVoters.length === 0 && (
+                  <p style={{ color: "#9ca3af", fontStyle: "italic", fontSize: "0.9rem", marginTop: "0.5rem" }}>No emails added yet.</p>
+                )}
+
+                {/* 3. Domain Input (Separate) */}
+                <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px solid #e5e7eb" }}>
+                  <label className="form-label">Allowed Domains</label>
+                  <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="@company.com"
+                      value={newDomain}
+                      onChange={(e) => setNewDomain(e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <button onClick={handleAddDomain} className="btn btn-small"  style={{
+            padding: "0.625rem 1rem",
+            backgroundColor: "#e5e7eb",
+            color: "#111827",
+            border: "1px solid #d1d5db",
+            borderRadius: "0.5rem",
+            fontWeight: "600",
+            fontSize: "0.875rem",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            whiteSpace: "nowrap",
+          }}>
+                      Add Domain
+                    </button>
+                  </div>
+                  
+                  {/* Domains List (Chips) */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                    {formData.allowedDomains.map((d, i) => (
+                      <span key={i} style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 8px", borderRadius: "4px", fontSize: "0.85rem" }}>
+                        {d} <button onClick={() => removeDomain(d)} style={{ border: "none", background: "none", cursor: "pointer", color: "#1e40af", fontWeight: "bold" }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
         </>
       )}
 
+      
       {/* VOTING RULES TAB */}
       {activeTab === "Voting Rules" && (
         <div className="section-card">
-          <h2>Voting Rules</h2>
+          <h2>Selection Rules</h2>
           <div className="section-content">
-             <label className="radio-option">
-                <input
-                  type="radio"
-                  name="visibility"
-                  value="private"
-                  checked={formData.visibility === "private"}
-                  onChange={(e) => handleChange("visibility", e.target.value)}
-                />
-                <div className="radio-text">
-                  <h3>Private</h3>
-                  <p>Only people with the password can access the poll.</p>
+            
+            {/* Single Choice Option */}
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="votingType"
+                // It is single choice if both Min and Max are 1
+                checked={formData.selectionLimit === 1 && formData.minSelectionLimit === 1}
+                onChange={() => {
+                  handleChange("minSelectionLimit", 1);
+                  handleChange("selectionLimit", 1);
+                }}
+              />
+              <div className="radio-text">
+                <h3>Single Choice</h3>
+                <p>Voters can only choose one option.</p>
+              </div>
+            </label>
+
+            {/* Multiple Choice Option */}
+            <label className="radio-option">
+              <input
+                type="radio"
+                name="votingType"
+                // Checked if Max is greater than 1
+                checked={formData.selectionLimit > 1}
+                onChange={() => {
+                  handleChange("minSelectionLimit", 1);
+                  handleChange("selectionLimit", 2);
+                }}
+              />
+              <div className="radio-text">
+                <h3>Multiple Choice</h3>
+                <p>Voters can choose more than one option.</p>
+              </div>
+            </label>
+
+            {/* Inputs for Minimum and Maximum - Only show for Multiple Choice */}
+            {formData.selectionLimit > 1 && (
+              <div className="form-grid" style={{ marginTop: "1.5rem", paddingLeft: "2.5rem", borderLeft: "3px solid #e5e7eb" }}>
+                
+                {/* MINIMUM INPUT */}
+                <div className="form-group">
+                  <label className="form-label">Minimum choices required</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ width: "120px" }}
+                      min="1"
+                      max={formData.selectionLimit} // Cannot exceed the Max
+                      value={formData.minSelectionLimit}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        // Ensure Min is at least 1 and does not exceed current Max
+                        if (val >= 1 && val <= formData.selectionLimit) {
+                          handleChange("minSelectionLimit", val);
+                        }
+                      }}
+                    />
+                    <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>options</span>
+                  </div>
+                  <p style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.25rem" }}>
+                    Voters must select at least this many.
+                  </p>
                 </div>
-              </label>
+
+                {/* MAXIMUM INPUT */}
+                <div className="form-group">
+                  <label className="form-label">Maximum choices allowed</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ width: "120px" }}
+                      min={formData.minSelectionLimit} 
+                      value={formData.selectionLimit}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (val >= formData.minSelectionLimit && val <= pollData['options'].length) {
+                          handleChange("selectionLimit", val);
+                        }
+                      }}
+                    />
+                    <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>options</span>
+                  </div>
+                  <p style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "0.25rem" }}>
+                    Voters cannot select more than this.
+                  </p>
+                </div>
+
+              </div>
+            )}
+            
           </div>
         </div>
       )}
 
-      {/* SCHEDULE TAB */}
+    {/* SCHEDULE TAB */}
       {activeTab === "Schedule" && (
         <div className="section-card">
           <h2>Schedule</h2>
           <div className="section-content">
             <div className="form-grid">
+              
+              {/* START DATE */}
               <div className="form-group">
                 <label className="form-label">Poll Start Date & Time</label>
                 <input
                   type="datetime-local"
                   className="form-input"
-                  value={formData.startDate}
+                  
+                  // 1. Allow clicking anywhere to open calendar
+                  onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                  
+                  // 2. Handle Value
+                  value={formData.startDate ? formData.startDate.slice(0, 16) : ""}
                   onChange={(e) => handleChange("startDate", e.target.value)}
+                  
+                  // 3. LOGIC: Cannot be in the past, Cannot be > 1 year
+                  min={new Date().toISOString().slice(0, 16)} 
+                  max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 16)}
                 />
+                <p style={{fontSize: "0.75rem", color: "#6b7280", marginTop: "4px"}}>
+                  Limit: 1 year from today
+                </p>
               </div>
+
+              {/* CLOSE DATE */}
               <div className="form-group">
                 <label className="form-label">Poll Close Date & Time</label>
                 <input
                   type="datetime-local"
                   className="form-input"
-                  value={formData.closeDate}
+                  
+                  // 1. Allow clicking anywhere to open calendar
+                  onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                  
+                  // 2. Handle Value
+                  value={formData.closeDate ? formData.closeDate.slice(0, 16) : ""}
                   onChange={(e) => handleChange("closeDate", e.target.value)}
+                  
+                  // 3. LOGIC: Must be after Start Date
+                  min={formData.startDate ? formData.startDate.slice(0, 16) : new Date().toISOString().slice(0, 16)}
+                  
+                  // 4. LOGIC: Limit close date (e.g., max 2 years from now)
+                  max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().slice(0, 16)}
                 />
               </div>
+
             </div>
           </div>
         </div>
       )}
-
-      {/* ADVANCED TAB */}
-      {activeTab === "Advanced" && (
+      {/*  ADVANCED TAB */}
+       {activeTab === "Advanced" && (
         <div className="section-card">
           <h2>Advanced Options</h2>
           <div className="section-content">
+            
+            {/* Toggle 1: Comments */}
             <div className="toggle-container">
               <div className="toggle-label">
                 <h3>Enable Comments</h3>
                 <p>Allow users to leave comments on the poll.</p>
               </div>
+              {/* Note: We use a label so clicking anywhere on the switch works */}
               <label className="toggle-switch">
                 <input
                   type="checkbox"
                   checked={formData.enableComments}
-                  onChange={(e) =>
-                    handleChange("enableComments", e.target.checked)
-                  }
+                  // IMPORTANT: Use e.target.checked for checkboxes
+                  onChange={(e) => handleChange("enableComments", e.target.checked)}
                 />
-                <div className="toggle-slider"></div>
+                <span className="toggle-slider"></span>
               </label>
             </div>
 
+            {/* Toggle 2: Results */}
             <div className="toggle-container">
               <div className="toggle-label">
                 <h3>Show Results During Voting</h3>
@@ -259,10 +596,9 @@ const MainContent = ({ activeTab }) => {
                 <input
                   type="checkbox"
                   checked={formData.showResults}
-                  onChange={(e) =>handleChange("showResults", e.target.checked)
-                  }
+                  onChange={(e) => handleChange("showResults", e.target.checked)}
                 />
-                <div className="toggle-slider"></div>
+                <span className="toggle-slider"></span>
               </label>
             </div>
           </div>
