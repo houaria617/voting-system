@@ -6,7 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Plus, Trash2 } from "lucide-react";
 import CreatePollPage from './pages/createPoll/createPoll';
 import ConfigurePollPage from './pages/configurePoll/ConfigurePoll';
-import './App.css';
+import './styles/index.css';
 import SharePoll from './pages/sharePoll/sharePoll';  
 
 

@@ -10,13 +10,13 @@ const MainContent = ({ activeTab }) => {
     visibility: "public",
     startDate: "",
     closeDate: "",
-    password: "",
     enableComments: true,
     showResults: false,
     allowedVoters: [], // Stores emails
     allowedDomains: [], // Stores domains like @gmail.com
     minSelectionLimit: 1,
-    selectionLimit: 1,
+    selectionLimit: pollData['options'].length,
+    ismultiplechoices : false,
     selectedTheme: "corporate",
     backgroundImage: "",
     logo: "",
@@ -251,7 +251,7 @@ const MainContent = ({ activeTab }) => {
                 </div>
               </label>
 
-              {formData.visibility === "private" && (
+              {/* {formData.visibility === "private" && (
                 <div className="password-input-container">
                   <label className="form-label">Password</label>
                   <input
@@ -262,7 +262,7 @@ const MainContent = ({ activeTab }) => {
                     onChange={(e) => handleChange("password", e.target.value)}
                   />
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 
@@ -419,6 +419,7 @@ const MainContent = ({ activeTab }) => {
                 onChange={() => {
                   handleChange("minSelectionLimit", 1);
                   handleChange("selectionLimit", 1);
+                  handleChange("ismultiplechoice", false);
                 }}
               />
               <div className="radio-text">
@@ -437,6 +438,7 @@ const MainContent = ({ activeTab }) => {
                 onChange={() => {
                   handleChange("minSelectionLimit", 1);
                   handleChange("selectionLimit", 2);
+                  handleChange("ismultiplechoice", true);
                 }}
               />
               <div className="radio-text">
@@ -446,7 +448,7 @@ const MainContent = ({ activeTab }) => {
             </label>
 
             {/* Inputs for Minimum and Maximum - Only show for Multiple Choice */}
-            {formData.selectionLimit > 1 && (
+            {1 == 0 && (
               <div className="form-grid" style={{ marginTop: "1.5rem", paddingLeft: "2.5rem", borderLeft: "3px solid #e5e7eb" }}>
                 
                 {/* MINIMUM INPUT */}

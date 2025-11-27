@@ -1,8 +1,8 @@
 // ===== SharePoll.jsx =====
 import React, { useState } from "react";
-import "./SharePoll.css"; // Import the CSS file we created
+import "../../styles/sharePoll.css"; 
 
-// Using Google Material Symbols for icons
+
 const SharePoll = () => {
   // The poll link (In a real app, retrieve this from props or URL params)
   const pollLink = "https://yourpoll.com/p/xyz123";

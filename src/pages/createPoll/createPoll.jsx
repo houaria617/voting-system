@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BarChart3, Plus, Trash2, ChevronDown } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
+// import '../../styles/create_poll.css';
 const CreatePollPage = () => {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
@@ -354,7 +355,7 @@ const navigate = useNavigate();
                         style={{
                           padding: '0.75rem',
                           backgroundColor: 'white',
-                        //   border: '1px solid #E5E7EB',
+                          border: '1px solid #E5E7EB',
                           borderRadius: '8px',
                           cursor: options.length > 2 ? 'pointer' : 'not-allowed',
                           opacity: options.length > 2 ? 1 : 0.4,
@@ -374,7 +375,7 @@ const navigate = useNavigate();
                           if (options.length > 2) {
                         
                             e.currentTarget.style.backgroundColor = 'white';
-                            e.currentTarget.style.borderColor = '';
+                            e.currentTarget.style.borderColor = '#E5E7EB';
                           }
                         }}
                       >
@@ -415,7 +416,7 @@ const navigate = useNavigate();
               </div>
 
               {/* Poll Settings */}
-              <div style={{
+              {/* <div style={{
                 borderTop: '1px solid #E5E7EB',
                 paddingTop: '1.5rem',
                 marginBottom: '1.5rem'
@@ -523,7 +524,7 @@ const navigate = useNavigate();
                     </div>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Action Buttons */}
               <div style={{

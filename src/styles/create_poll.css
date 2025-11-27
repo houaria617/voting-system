@@ -10,6 +10,7 @@ body {
   background-color: #f9fafb;
 }
 
+
 .page-container {
   width: 100%;
   max-width: 1200px; /* Changed from 800px */
@@ -125,7 +126,8 @@ body {
 .remove-option-btn {
   padding: 0.75rem;
   background-color: transparent;
-  border: 1px solid #d1d5db;
+      
+  border: 1px solid #d1d5db transparent;
   border-radius: 0.5rem;
   color: #9ca3af;
   cursor: pointer;

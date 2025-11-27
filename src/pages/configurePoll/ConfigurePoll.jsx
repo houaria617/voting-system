@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Sidebar from "../../components/Sidebar/Sidebar";
 import MainContent from "../../components/MainContent/MainContent";
-import "./ConfigurePoll.css";
+import "../../styles/ConfigurePoll.css";
 
 const PollConfigurationPage = () => {
   const [activeTab, setActiveTab] = useState("General");
