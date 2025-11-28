@@ -1,11 +1,11 @@
 import React from 'react';
-// import DashboardPage from './pages/DashboardPage.jsx';
-//import PollPreviewPage from './pages/PollPreviewPage.jsx';
 import './styles/index.css';
 import PollLandingPage from './pages/PollLandingPage';
+import DashboardPage from './pages/DashboardPage';
+import PollPreviewPage from './pages/PollPreviewPage';
 
 function App() {
-  return <PollLandingPage />;
+  return <DashboardPage />;
 }
 
 export default App;
