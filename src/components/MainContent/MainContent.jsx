@@ -1,6 +1,7 @@
-// ===== MainContent/MainContent.jsx =====
+// ===== MainContent/MainContent.jsx - UPDATED (Only ClassNames Changed) =====
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 const MainContent = ({ activeTab }) => {
   const { state } = useLocation();
   const pollData = state?.pollData || { options: [] }; // Fallback to avoid crash
@@ -166,19 +167,19 @@ const MainContent = ({ activeTab }) => {
     console.log("Sending to preview:", finalPollData);
 
     // Navigate to the preview route and pass the data
-    navigate("/configure-poll", { state: { pollData: finalPollData } });
+    navigate("/previewpage", { state: { pollData: finalPollData } });
   };
 
 
   return (
     
-    <main className="main-content">
-      <div className="header-section">
-        <div className="header-text">
+    <main className="config-main-content">
+      <div className="config-header-section">
+        <div className="config-header-text">
           <h1>Poll Configurations</h1>
           <p>Customize your poll settings</p>
         </div>
-        <button className="save-btn" onClick={handleSave}>
+        <button className="config-save-btn" onClick={handleSave}>
           Save Changes
         </button>
       </div>
@@ -187,10 +188,10 @@ const MainContent = ({ activeTab }) => {
       {activeTab === "General" && (
         <>
           {/* Anonymity */}
-          <div className="section-card">
+          <div className="config-section-card">
             <h2>Anonymity</h2>
-            <div className="section-content">
-              <label className="radio-option">
+            <div className="config-section-content">
+              <label className="config-radio-option">
                 <input
                   type="radio"
                   name="anonymity"
@@ -198,12 +199,12 @@ const MainContent = ({ activeTab }) => {
                   checked={formData.anonymity === "fully-anonymous"}
                   onChange={(e) => handleChange("anonymity", e.target.value)}
                 />
-                <div className="radio-text">
+                <div className="config-radio-text">
                   <h3>Fully Anonymous</h3>
                   <p>Voters' identities will be hidden.</p>
                 </div>
               </label>
-              <label className="radio-option">
+              <label className="config-radio-option">
                 <input
                   type="radio"
                   name="anonymity"
@@ -211,7 +212,7 @@ const MainContent = ({ activeTab }) => {
                   checked={formData.anonymity === "show-names"}
                   onChange={(e) => handleChange("anonymity", e.target.value)}
                 />
-                <div className="radio-text">
+                <div className="config-radio-text">
                   <h3>Show Voter Names</h3>
                   <p>Voters' names will be visible to everyone.</p>
                 </div>
@@ -220,10 +221,10 @@ const MainContent = ({ activeTab }) => {
           </div>
 
           {/* Visibility */}
-          <div className="section-card">
+          <div className="config-section-card">
             <h2>Visibility</h2>
-            <div className="section-content">
-              <label className="radio-option">
+            <div className="config-section-content">
+              <label className="config-radio-option">
                 <input
                   type="radio"
                   name="visibility"
@@ -231,13 +232,13 @@ const MainContent = ({ activeTab }) => {
                   checked={formData.visibility === "public"}
                   onChange={(e) => handleChange("visibility", e.target.value)}
                 />
-                <div className="radio-text">
+                <div className="config-radio-text">
                   <h3>Public</h3>
                   <p>Anyone with the link can view and vote.</p>
                 </div>
               </label>
 
-              <label className="radio-option">
+              <label className="config-radio-option">
                 <input
                   type="radio"
                   name="visibility"
@@ -245,7 +246,7 @@ const MainContent = ({ activeTab }) => {
                   checked={formData.visibility === "private"}
                   onChange={(e) => handleChange("visibility", e.target.value)}
                 />
-                <div className="radio-text">
+                <div className="config-radio-text">
                   <h3>Private</h3>
                   <p>Only people with the password or on the allowed list can access.</p>
                 </div>
@@ -253,10 +254,10 @@ const MainContent = ({ activeTab }) => {
 
               {/* {formData.visibility === "private" && (
                 <div className="password-input-container">
-                  <label className="form-label">Password</label>
+                  <label className="config-form-label">Password</label>
                   <input
                     type="password"
-                    className="form-input"
+                    className="config-form-input"
                     placeholder="Enter a password"
                     value={formData.password}
                     onChange={(e) => handleChange("password", e.target.value)}
@@ -268,16 +269,16 @@ const MainContent = ({ activeTab }) => {
 
           {/* === ALLOWED VOTERS (TABLE VERSION) === */}
           {formData.visibility === "private" && (
-            <div className="section-card">
+            <div className="config-section-card">
               <h2>Allowed Access</h2>
-              <div className="section-content">
+              <div className="config-section-content">
                 
                 {/* 1. Email Input */}
-                <label className="form-label">Add Allowed Email</label>
+                <label className="config-form-label">Add Allowed Email</label>
                 <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
                   <input
                     type="text"
-                    className="form-input"
+                    className="config-form-input"
                     placeholder="user@example.com"
                     style={{ 
                       flex: 1, 
@@ -290,7 +291,7 @@ const MainContent = ({ activeTab }) => {
                       if(emailError) setEmailError(false);
                     }}
                   />
-                  <button onClick={handleAddEmail} className="btn btn-small"  style={{
+                  <button onClick={handleAddEmail} className="config-btn config-btn-small"  style={{
             padding: "0.625rem 1rem",
             backgroundColor: "#e5e7eb",
             color: "#111827",
@@ -360,17 +361,17 @@ const MainContent = ({ activeTab }) => {
 
                 {/* 3. Domain Input (Separate) */}
                 <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px solid #e5e7eb" }}>
-                  <label className="form-label">Allowed Domains</label>
+                  <label className="config-form-label">Allowed Domains</label>
                   <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
                     <input
                       type="text"
-                      className="form-input"
+                      className="config-form-input"
                       placeholder="@company.com"
                       value={newDomain}
                       onChange={(e) => setNewDomain(e.target.value)}
                       style={{ flex: 1 }}
                     />
-                    <button onClick={handleAddDomain} className="btn btn-small"  style={{
+                    <button onClick={handleAddDomain} className="config-btn config-btn-small"  style={{
             padding: "0.625rem 1rem",
             backgroundColor: "#e5e7eb",
             color: "#111827",
@@ -405,12 +406,12 @@ const MainContent = ({ activeTab }) => {
       
       {/* VOTING RULES TAB */}
       {activeTab === "Voting Rules" && (
-        <div className="section-card">
+        <div className="config-section-card">
           <h2>Selection Rules</h2>
-          <div className="section-content">
+          <div className="config-section-content">
             
             {/* Single Choice Option */}
-            <label className="radio-option">
+            <label className="config-radio-option">
               <input
                 type="radio"
                 name="votingType"
@@ -422,14 +423,14 @@ const MainContent = ({ activeTab }) => {
                   handleChange("ismultiplechoice", false);
                 }}
               />
-              <div className="radio-text">
+              <div className="config-radio-text">
                 <h3>Single Choice</h3>
                 <p>Voters can only choose one option.</p>
               </div>
             </label>
 
             {/* Multiple Choice Option */}
-            <label className="radio-option">
+            <label className="config-radio-option">
               <input
                 type="radio"
                 name="votingType"
@@ -441,7 +442,7 @@ const MainContent = ({ activeTab }) => {
                   handleChange("ismultiplechoice", true);
                 }}
               />
-              <div className="radio-text">
+              <div className="config-radio-text">
                 <h3>Multiple Choice</h3>
                 <p>Voters can choose more than one option.</p>
               </div>
@@ -449,15 +450,15 @@ const MainContent = ({ activeTab }) => {
 
             {/* Inputs for Minimum and Maximum - Only show for Multiple Choice */}
             {1 == 0 && (
-              <div className="form-grid" style={{ marginTop: "1.5rem", paddingLeft: "2.5rem", borderLeft: "3px solid #e5e7eb" }}>
+              <div className="config-form-grid" style={{ marginTop: "1.5rem", paddingLeft: "2.5rem", borderLeft: "3px solid #e5e7eb" }}>
                 
                 {/* MINIMUM INPUT */}
-                <div className="form-group">
-                  <label className="form-label">Minimum choices required</label>
+                <div className="config-form-group">
+                  <label className="config-form-label">Minimum choices required</label>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <input
                       type="number"
-                      className="form-input"
+                      className="config-form-input"
                       style={{ width: "120px" }}
                       min="1"
                       max={formData.selectionLimit} // Cannot exceed the Max
@@ -478,12 +479,12 @@ const MainContent = ({ activeTab }) => {
                 </div>
 
                 {/* MAXIMUM INPUT */}
-                <div className="form-group">
-                  <label className="form-label">Maximum choices allowed</label>
+                <div className="config-form-group">
+                  <label className="config-form-label">Maximum choices allowed</label>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <input
                       type="number"
-                      className="form-input"
+                      className="config-form-input"
                       style={{ width: "120px" }}
                       min={formData.minSelectionLimit} 
                       value={formData.selectionLimit}
@@ -510,17 +511,17 @@ const MainContent = ({ activeTab }) => {
 
     {/* SCHEDULE TAB */}
       {activeTab === "Schedule" && (
-        <div className="section-card">
+        <div className="config-section-card">
           <h2>Schedule</h2>
-          <div className="section-content">
-            <div className="form-grid">
+          <div className="config-section-content">
+            <div className="config-form-grid">
               
               {/* START DATE */}
-              <div className="form-group">
-                <label className="form-label">Poll Start Date & Time</label>
+              <div className="config-form-group">
+                <label className="config-form-label">Poll Start Date & Time</label>
                 <input
                   type="datetime-local"
-                  className="form-input"
+                  className="config-form-input"
                   
                   // 1. Allow clicking anywhere to open calendar
                   onClick={(e) => e.target.showPicker && e.target.showPicker()}
@@ -539,11 +540,11 @@ const MainContent = ({ activeTab }) => {
               </div>
 
               {/* CLOSE DATE */}
-              <div className="form-group">
-                <label className="form-label">Poll Close Date & Time</label>
+              <div className="config-form-group">
+                <label className="config-form-label">Poll Close Date & Time</label>
                 <input
                   type="datetime-local"
-                  className="form-input"
+                  className="config-form-input"
                   
                   // 1. Allow clicking anywhere to open calendar
                   onClick={(e) => e.target.showPicker && e.target.showPicker()}
@@ -566,41 +567,41 @@ const MainContent = ({ activeTab }) => {
       )}
       {/*  ADVANCED TAB */}
        {activeTab === "Advanced" && (
-        <div className="section-card">
+        <div className="config-section-card">
           <h2>Advanced Options</h2>
-          <div className="section-content">
+          <div className="config-section-content">
             
             {/* Toggle 1: Comments */}
-            <div className="toggle-container">
-              <div className="toggle-label">
+            <div className="config-toggle-container">
+              <div className="config-toggle-label">
                 <h3>Enable Comments</h3>
                 <p>Allow users to leave comments on the poll.</p>
               </div>
               {/* Note: We use a label so clicking anywhere on the switch works */}
-              <label className="toggle-switch">
+              <label className="config-toggle-switch">
                 <input
                   type="checkbox"
                   checked={formData.enableComments}
                   // IMPORTANT: Use e.target.checked for checkboxes
                   onChange={(e) => handleChange("enableComments", e.target.checked)}
                 />
-                <span className="toggle-slider"></span>
+                <span className="config-toggle-slider"></span>
               </label>
             </div>
 
             {/* Toggle 2: Results */}
-            <div className="toggle-container">
-              <div className="toggle-label">
+            <div className="config-toggle-container">
+              <div className="config-toggle-label">
                 <h3>Show Results During Voting</h3>
                 <p>Live results will be visible to voters after they have voted.</p>
               </div>
-              <label className="toggle-switch">
+              <label className="config-toggle-switch">
                 <input
                   type="checkbox"
                   checked={formData.showResults}
                   onChange={(e) => handleChange("showResults", e.target.checked)}
                 />
-                <span className="toggle-slider"></span>
+                <span className="config-toggle-slider"></span>
               </label>
             </div>
           </div>
@@ -611,9 +612,9 @@ const MainContent = ({ activeTab }) => {
         {activeTab === "Themes" && (
         <>
           {/* THEME GALLERY */}
-          <div className="section-card">
+          <div className="config-section-card">
             <h2>Theme Gallery</h2>
-            <div className="section-content">
+            <div className="config-section-content">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
                 {themes.map((theme) => (
                   <div
@@ -643,20 +644,20 @@ const MainContent = ({ activeTab }) => {
             </div>
           </div>
           {/* THEME ADJUSTMENTS */}
-<div className="section-card">
+<div className="config-section-card">
   <h2>Theme Adjustments</h2>
-  <div className="section-content">
+  <div className="config-section-content">
     
     {/* LOGO UPLOAD */}
-    <div className="form-group">
-      <label className="form-label">Company Logo (Optional)</label>
+    <div className="config-form-group">
+      <label className="config-form-label">Company Logo (Optional)</label>
       <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
         Upload your company logo to display on the poll
       </p>
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
         <input
           type="text"
-          className="form-input"
+          className="config-form-input"
           placeholder="Enter logo URL or upload new"
           value={formData.logo}
           onChange={(e) => handleChange("logo", e.target.value)}
@@ -687,15 +688,15 @@ const MainContent = ({ activeTab }) => {
     </div>
 
               {/* BACKGROUND IMAGE */}
-              <div className="form-group">
-                <label className="form-label">Background Image</label>
+              <div className="config-form-group">
+                <label className="config-form-label">Background Image</label>
                 <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
                   Current image URL or upload new
                 </p>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
                   <input
                     type="text"
-                    className="form-input"
+                    className="config-form-input"
                     placeholder="Enter image URL"
                     value={formData.backgroundImage}
                     onChange={(e) => handleChange("backgroundImage", e.target.value)}
@@ -721,10 +722,10 @@ const MainContent = ({ activeTab }) => {
               </div>
 
               {/* FONT STYLE */}
-              <div className="form-group">
-                <label className="form-label">Font Style</label>
+              <div className="config-form-group">
+                <label className="config-form-label">Font Style</label>
                 <select
-                  className="form-input"
+                  className="config-form-input"
                   value={formData.fontStyle}
                   onChange={(e) => handleChange("fontStyle", e.target.value)}
                 >
@@ -736,8 +737,8 @@ const MainContent = ({ activeTab }) => {
               </div>
 
               {/* PRIMARY COLOR */}
-              <div className="form-group">
-                <label className="form-label">Primary Color</label>
+              <div className="config-form-group">
+                <label className="config-form-label">Primary Color</label>
                 <input
                   type="color"
                   value={formData.primaryColor}
@@ -747,8 +748,8 @@ const MainContent = ({ activeTab }) => {
               </div>
 
               {/* SECONDARY COLOR */}
-              <div className="form-group">
-                <label className="form-label">Secondary Color</label>
+              <div className="config-form-group">
+                <label className="config-form-label">Secondary Color</label>
                 <input
                   type="color"
                   value={formData.secondaryColor}
@@ -765,9 +766,9 @@ const MainContent = ({ activeTab }) => {
         
 
       {/* ACTION BUTTONS */}
-      <div className="button-group">
-        <button className="btn btn-cancel">Cancel</button>
-        <button className="btn btn-delete" onClick={handleDelete}>
+      <div className="config-button-group">
+        <button className="config-btn config-btn-cancel">Cancel</button>
+        <button className="config-btn config-btn-delete" onClick={handleDelete}>
           Delete Poll
         </button>
       </div>
@@ -776,6 +777,3 @@ const MainContent = ({ activeTab }) => {
 };
 
 export default MainContent;
-
-
-

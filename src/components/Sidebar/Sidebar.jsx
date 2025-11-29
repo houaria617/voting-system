@@ -1,46 +1,38 @@
 import { useState } from 'react';
 import { navItems } from '../../constants/sidbarItems';
+
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const [isOpen, setIsOpen] = useState(true);
-
-  // const navItems = [
-  //   { icon: "settings", label: "General" },
-  //   { icon: "palette", label: "Themes" },
-  //   { icon: "gavel", label: "Voting Rules" },
-  //   { icon: "calendar_today", label: "Schedule" },
-  //   { icon: "tune", label: "Advanced" },
-  // ];
 
   return (
     <>
       {/* Mobile Toggle Button */}
       <button 
-        className="sidebar-toggle"
+        className="config-sidebar-toggle"
         onClick={() => setIsOpen(!isOpen)}
       >
         ☰ Menu
       </button>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
+      <aside className={`config-sidebar ${isOpen ? 'open' : 'closed'}`}>
         <div>
-          <div className="sidebar-header">
-            
-            <div className="sidebar-info">
+          <div className="config-sidebar-header">
+            <div className="config-sidebar-info">
               <h3>My Awesome Poll</h3>
               <p>By John Doe</p>
             </div>
           </div>
 
-          <div className="sidebar-nav">
+          <div className="config-sidebar-nav">
             {navItems.map((item) => (
               <button
                 key={item.label}
                 onClick={() => {
                   setActiveTab(item.label);
-                  setIsOpen(false); // Close sidebar on mobile after selection
+                  setIsOpen(false);
                 }}
-                className={`nav-item ${activeTab === item.label ? "active" : ""}`}
+                className={`config-nav-item ${activeTab === item.label ? "active" : ""}`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
                 <span>{item.label}</span>
@@ -48,8 +40,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             ))}
           </div>
         </div>
-
-        
       </aside>
     </>
   );

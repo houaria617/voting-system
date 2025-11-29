@@ -1,4 +1,4 @@
-/* ===== styles.css ===== */
+/* ===== Configure Poll Page - styles.css (FIXED) ===== */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 .material-symbols-outlined {
@@ -15,11 +15,13 @@
   direction: ltr;
   -webkit-font-smoothing: antialiased;
 }
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 html, body, #root {
   background-color: #f6f7f8 !important;
   margin: 0;
@@ -37,10 +39,13 @@ html, body, #root {
 }
 
 body {
-  /* font-family: Inter, "Noto Sans", sans-serif; */
   background-color: var(--bg-light);
   color: var(--text-primary);
 }
+
+/* ========================================
+   CONFIGURE POLL PAGE - UNIQUE CLASS NAMES
+   ======================================== */
 
 .layout-container {
   display: flex;
@@ -58,9 +63,8 @@ body {
   flex-direction: row;
 }
 
-
-/* SIDEBAR */
-.sidebar {
+/* SIDEBAR - RENAMED TO config-sidebar */
+.config-sidebar {
   width: 256px;
   min-height: 700px;
   display: flex;
@@ -72,14 +76,14 @@ body {
   border: 1px solid var(--border-color);
 }
 
-.sidebar-header {
+.config-sidebar-header {
   display: flex;
   gap: 0.75rem;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.sidebar-avatar {
+.config-sidebar-avatar {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
@@ -88,25 +92,25 @@ body {
   flex-shrink: 0;
 }
 
-.sidebar-info h3 {
+.config-sidebar-info h3 {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
-.sidebar-info p {
+.config-sidebar-info p {
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
 
-.sidebar-nav {
+.config-sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.nav-item {
+.config-nav-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -123,16 +127,16 @@ body {
   transition: all 0.2s ease;
 }
 
-.nav-item:hover {
+.config-nav-item:hover {
   background-color: #f3f4f6;
 }
 
-.nav-item.active {
+.config-nav-item.active {
   background-color: rgba(19, 127, 236, 0.1);
   color: var(--primary);
 }
 
-.nav-item .icon {
+.config-nav-item .icon {
   font-size: 1.25rem;
 }
 
@@ -153,15 +157,15 @@ body {
   background-color: #0d5fbf;
 }
 
-/* MAIN CONTENT */
-.main-content {
+/* MAIN CONTENT - RENAMED TO config-main-content */
+.config-main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.header-section {
+.config-header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -171,19 +175,19 @@ body {
   border: 1px solid var(--border-color);
 }
 
-.header-text h1 {
+.config-header-text h1 {
   font-size: 2.25rem;
   font-weight: 900;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
-.header-text p {
+.config-header-text p {
   font-size: 1rem;
   color: var(--text-secondary);
 }
 
-.save-btn {
+.config-save-btn {
   padding: 0.625rem 1rem;
   background-color: var(--primary);
   color: var(--white);
@@ -195,19 +199,19 @@ body {
   transition: all 0.2s ease;
 }
 
-.save-btn:hover {
+.config-save-btn:hover {
   background-color: #0d5fbf;
 }
 
-/* SECTION CARD */
-.section-card {
+/* SECTION CARD - RENAMED TO config-section-card */
+.config-section-card {
   background-color: var(--white);
   border-radius: 0.75rem;
   border: 1px solid var(--border-color);
   padding: 0;
 }
 
-.section-card h2 {
+.config-section-card h2 {
   font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -215,13 +219,13 @@ body {
   margin: 0;
 }
 
-.section-content {
+.config-section-content {
   padding: 1.5rem;
   padding-top: 0.5rem;
 }
 
-/* RADIO BUTTONS */
-.radio-option {
+/* RADIO BUTTONS - RENAMED TO config-radio-option */
+.config-radio-option {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
@@ -233,11 +237,11 @@ body {
   margin-bottom: 0.75rem;
 }
 
-.radio-option:hover {
+.config-radio-option:hover {
   border-color: var(--primary);
 }
 
-.radio-option input[type="radio"] {
+.config-radio-option input[type="radio"] {
   width: 1.25rem;
   height: 1.25rem;
   cursor: pointer;
@@ -246,34 +250,34 @@ body {
   margin-top: 0.125rem;
 }
 
-.radio-text h3 {
+.config-radio-text h3 {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
-.radio-text p {
+.config-radio-text p {
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
 
-/* FORM INPUTS */
-.form-group {
+/* FORM INPUTS - RENAMED TO config-form-* */
+.config-form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.form-label {
+.config-form-label {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.form-input,
-.form-select {
+.config-form-input,
+.config-form-select {
   width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-color);
@@ -281,80 +285,74 @@ body {
   font-size: 0.875rem;
   font-family: inherit;
   transition: all 0.2s ease;
-  background-color: #ffffff !important; 
+  background-color: #ffffff !important;
   color: #111827 !important;
 }
 
-.form-input:focus,
-.form-select:focus {
+.config-form-input:focus,
+.config-form-select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(19, 127, 236, 0.1);
 }
 
-.form-input::placeholder {
+.config-form-input::placeholder {
   color: var(--text-secondary);
 }
 
-/* GRID LAYOUT */
-.form-grid {
+/* GRID LAYOUT - RENAMED TO config-form-grid */
+.config-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
 }
 
-/* TOGGLE SWITCH */
-.toggle-container {
+/* TOGGLE SWITCH - RENAMED TO config-toggle-* */
+.config-toggle-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
 }
 
-.toggle-label h3 {
+.config-toggle-label h3 {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
-.toggle-label p {
+.config-toggle-label p {
   font-size: 0.875rem;
   color: var(--text-secondary);
 }
 
-/* ================= TOGGLE SWITCH FIX (NO FONTS AFFECTED) ================= */
-
-/* 1. Container Size */
-.toggle-switch {
+.config-toggle-switch {
   position: relative;
   width: 2.75rem;
   height: 1.5rem;
   display: inline-block;
 }
 
-/* 2. Hide the Checkbox */
-.toggle-switch input {
+.config-toggle-switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-/* 3. The Background Track */
-.toggle-slider {
+.config-toggle-slider {
   position: absolute;
   cursor: pointer;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #d1d5db; /* Grey Default */
+  background-color: #d1d5db;
   border-radius: 34px;
   transition: 0.4s;
 }
 
-/* 4. The White Circle (Using ::before) */
-.toggle-slider::before {
+.config-toggle-slider::before {
   position: absolute;
   content: "";
   height: 1.1rem;
@@ -366,15 +364,14 @@ body {
   transition: 0.4s;
 }
 
-/* 5. Turn GREEN when clicked */
-.toggle-switch input:checked + .toggle-slider {
+.config-toggle-switch input:checked + .config-toggle-slider {
   background-color: #22c55e;
 }
 
-/* 6. Move RIGHT when clicked */
-.toggle-switch input:checked + .toggle-slider::before {
+.config-toggle-switch input:checked + .config-toggle-slider::before {
   transform: translateX(1.25rem);
 }
+
 /* PASSWORD INPUT CONTAINER */
 .password-input-container {
   display: flex;
@@ -384,15 +381,15 @@ body {
   padding-top: 0.5rem;
 }
 
-/* ACTION BUTTONS */
-.button-group {
+/* ACTION BUTTONS - RENAMED TO config-btn */
+.config-button-group {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem;
 }
 
-.btn {
+.config-btn {
   padding: 0.625rem 1rem;
   border-radius: 0.5rem;
   font-weight: 700;
@@ -402,26 +399,27 @@ body {
   transition: all 0.2s ease;
 }
 
-.btn-cancel {
+.config-btn-cancel {
   background-color: transparent;
   color: var(--text-primary);
   border: 1px solid var(--border-color);
 }
 
-.btn-cancel:hover {
+.config-btn-cancel:hover {
   background-color: #f3f4f6;
 }
 
-.btn-delete {
+.config-btn-delete {
   background-color: #dc2626;
   color: var(--white);
 }
 
-.btn-delete:hover {
+.config-btn-delete:hover {
   background-color: #b91c1c;
 }
-/* MOBILE SIDEBAR TOGGLE */
-.sidebar-toggle {
+
+/* MOBILE SIDEBAR TOGGLE - RENAMED TO config-sidebar-toggle */
+.config-sidebar-toggle {
   display: none;
   position: fixed;
   top: 1rem;
@@ -439,11 +437,11 @@ body {
 
 /* DESKTOP - Show sidebar normally */
 @media (min-width: 769px) {
-  .sidebar-toggle {
+  .config-sidebar-toggle {
     display: none !important;
   }
 
-  .sidebar {
+  .config-sidebar {
     display: flex !important;
     width: 256px;
     min-height: 700px;
@@ -463,14 +461,14 @@ body {
     flex-direction: row;
   }
 
-  .main-content {
+  .config-main-content {
     flex: 1;
   }
 }
 
 /* TABLET - Collapsible sidebar */
 @media (max-width: 1024px) {
-  .sidebar {
+  .config-sidebar {
     width: 220px;
   }
 
@@ -481,11 +479,11 @@ body {
 
 /* MOBILE - Full width collapsible sidebar */
 @media (max-width: 768px) {
-  .sidebar-toggle {
+  .config-sidebar-toggle {
     display: block !important;
   }
 
-  .sidebar {
+  .config-sidebar {
     position: fixed;
     left: -100%;
     top: 0;
@@ -501,11 +499,11 @@ body {
     overflow-y: auto;
   }
 
-  .sidebar.open {
+  .config-sidebar.open {
     left: 0;
   }
 
-  .sidebar.closed {
+  .config-sidebar.closed {
     left: -100%;
   }
 
@@ -514,23 +512,23 @@ body {
     padding-top: 3rem;
   }
 
-  .header-section {
+  .config-header-section {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .form-grid {
+  .config-form-grid {
     grid-template-columns: 1fr;
   }
 
-  .save-btn {
+  .config-save-btn {
     width: 100%;
   }
 }
 
 /* SMALL MOBILE */
 @media (max-width: 480px) {
-  .sidebar {
+  .config-sidebar {
     width: 85%;
   }
 
@@ -538,27 +536,26 @@ body {
     padding: 1rem 0.5rem;
   }
 
-  .header-text h1 {
+  .config-header-text h1 {
     font-size: 1.5rem;
   }
 
-  .section-card h2 {
+  .config-section-card h2 {
     font-size: 1.125rem;
   }
 }
+
 /* =========================================
    FIX FOR CALENDAR ICON VISIBILITY
    ========================================= */
 
-/* 1. Ensure the input has space on the right so text doesn't cover the icon */
-.form-input[type="datetime-local"] {
+.config-form-input[type="datetime-local"] {
   position: relative;
   padding-right: 2.5rem !important;
   cursor: pointer;
 }
 
-/* 2. Force the calendar icon to be visible and styled */
-.form-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+.config-form-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   position: absolute;
   right: 0.75rem;
   width: 1.25rem;
@@ -569,8 +566,7 @@ body {
   filter: none;
 }
 
-/* Firefox support */
-.form-input[type="datetime-local"]::-moz-calendar-picker-indicator {
+.config-form-input[type="datetime-local"]::-moz-calendar-picker-indicator {
   opacity: 1 !important;
   cursor: pointer;
 }
