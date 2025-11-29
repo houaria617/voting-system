@@ -9,6 +9,11 @@ import ConfigurePollPage from './pages/configurePoll/ConfigurePoll';
 import './styles/index.css';
 import SharePoll from './pages/sharePoll/sharePoll';  
 
+import React from 'react';
+import './styles/index.css';
+import PollLandingPage from './pages/PollLandingPage';
+import DashboardPage from './pages/DashboardPage';
+import PollPreviewPage from './pages/PollPreviewPage';
 
 function App() {
   return (
@@ -20,6 +25,7 @@ function App() {
       </Routes>
     </Router>
   )
+  return <DashboardPage />;
 }
 
-export default App
+export default App;
