@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import './Signup.css';
+import '../../styles/Signup.css';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 

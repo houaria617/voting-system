@@ -8,13 +8,7 @@ import { FaPen } from "react-icons/fa";
 import { FaLink } from "react-icons/fa";
 import { FaSearch } from "react-icons/fa";
 
-
-
-
-
-
-
-import './welcome.css';
+import '../../styles/Signup.css';
 
 const Welcome = () => {
   const navigate = useNavigate();
