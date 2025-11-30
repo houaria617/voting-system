@@ -9,8 +9,6 @@ import SharePoll from './pages/sharePoll/sharePoll';
 import PollLandingPage from './pages/PollLandingPage';
 import DashboardPage from './pages/DashboardPage';
 import PollPreviewPage from './pages/PollPreviewPage';
-import AccessDenied from "./pages/accessDenied/accessDenied";
-import VoteRecorded from "./pages/confirmedPoll/confirmedPoll";
 
 function App() {
   return (
@@ -21,11 +19,6 @@ function App() {
         <Route path="/SharePoll" element={<SharePoll />} />
         <Route path='/DashboardPage' element={<DashboardPage />} />
         <Route path='/pollpreview' element={<PollPreviewPage/>} />
-        <Route path='/pollpreview' element={<PollPreviewPage/>} />
-        <Route path="/access-denied" element={<AccessDenied />} />
-          <Route path="/poll-confirmed" element={<VoteRecorded />} />
-
-
       </Routes>
     </Router>
   )
