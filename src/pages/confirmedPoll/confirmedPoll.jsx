@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // ✅ Add this import
+import { useNavigate } from "react-router-dom"; 
 import "../../styles/confirmedPoll.css";
 
 export default function VoteRecorded() {
