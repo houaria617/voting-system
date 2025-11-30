@@ -1,0 +1,277 @@
+/* ===== styles.css ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f9fafb;
+}
+
+
+.page-container {
+  width: 100%;
+  max-width: 1200px; /* Changed from 800px */
+  margin: 2rem auto;
+  padding: 0 1rem; /* Added padding for mobile */
+}
+
+.page-wrapper {
+  position: relative;
+}
+
+.card-container {
+  background-color: white; /* UNCOMMENTED - This is important! */
+  border-radius: 0.5rem; /* UNCOMMENTED */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* UNCOMMENTED */
+  padding: 2rem; /* UNCOMMENTED */
+  margin-bottom: 1.5rem; /* UNCOMMENTED */
+  width: 100%; /* UNCOMMENTED */
+}
+
+.poll-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem; /* Increased spacing */
+  padding: 1rem 2rem; /* Added padding */
+  background-color: white; /* Added white background */
+  border-radius: 0.5rem; /* Added border radius */
+}
+
+.header-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: #2563eb;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.header-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.form-section-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.form-section-subtitle {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control::placeholder {
+  color: #9ca3af;
+}
+
+.options-container {
+  margin-bottom: 1.5rem;
+}
+
+.option-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.option-input {
+  flex: 1;
+}
+
+.remove-option-btn {
+  padding: 0.75rem;
+  background-color: transparent;
+      
+  border: 1px solid #d1d5db transparent;
+  border-radius: 0.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.25rem;
+  display: flex; /* Added */
+  align-items: center; /* Added */
+  justify-content: center; /* Added */
+  min-width: 44px; /* Added for consistent size */
+}
+
+.remove-option-btn:hover {
+  color: #ef4444;
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+.add-option-btn {
+  background-color: transparent;
+  border: none;
+  color: #2563eb;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.add-option-btn:hover {
+  color: #1d4ed8;
+}
+
+.add-option-btn span {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.settings-container {
+  margin-bottom: 2rem;
+  border-top: 1px solid #e5e7eb; /* Added separator */
+  padding-top: 1.5rem; /* Added spacing */
+}
+
+.settings-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: transparent;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-toggle-btn:hover {
+  color: #111827;
+}
+
+.settings-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.settings-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.settings-content {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+}
+
+.settings-text {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 2rem; /* Added spacing */
+}
+
+.btn-base {
+  padding: 0.75rem 2rem; /* Increased horizontal padding */
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.btn-cancel {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.btn-cancel:hover {
+  background-color: #d1d5db;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+    margin: 1rem auto;
+  }
+  
+  .poll-header {
+    padding: 1rem;
+  }
+  
+  .card-container {
+    padding: 1.5rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .btn-base {
+    width: 100%;
+  }
+}
