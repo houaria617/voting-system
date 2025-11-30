@@ -167,7 +167,7 @@ const MainContent = ({ activeTab }) => {
     console.log("Sending to preview:", finalPollData);
 
     // Navigate to the preview route and pass the data
-    navigate("/previewpage", { state: { pollData: finalPollData } });
+    navigate("/poll/:pollId", { state: { pollData: finalPollData } });
   };
 
 
