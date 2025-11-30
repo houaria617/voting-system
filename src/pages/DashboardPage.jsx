@@ -8,11 +8,12 @@ import Button from '../components/common/Button.jsx';
 import { BarChart3 } from 'lucide-react';
 import { pollsData, statsData, activitiesData } from '../data/mockData.js';
 import '../styles/dashboard.css';
+import { useNavigate, Link } from 'react-router-dom';
 
 const DashboardPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('dashboard');
-  
+   const navigate = useNavigate();
   return (
     <div className="dashboard-layout">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -20,7 +21,9 @@ const DashboardPage = () => {
       <div className="dashboard-content">
         <header className="dashboard-header">
           <div className="header-spacer"></div>
-          <Button variant="primary">
+          <Button variant="primary"
+          onClick={() => navigate('/create-poll')}
+            >
             Create New Poll
           </Button>
         </header>

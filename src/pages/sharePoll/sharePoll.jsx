@@ -1,9 +1,10 @@
 // ===== SharePoll.jsx =====
 import React, { useState } from "react";
 import "../../styles/sharePoll.css"; 
-
-
+import Swal from 'sweetalert2';
+import { useNavigate } from "react-router-dom";
 const SharePoll = () => {
+  const navigate = useNavigate();
   // The poll link (In a real app, retrieve this from props or URL params)
   const pollLink = "https://yourpoll.com/p/xyz123";
   const qrImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuAD6h1Avu8A1aljHpdjV1q0Xswjwm3oOcWv7FTnmEEOoRNag-jZBKTXEvONmCF_ZW1jxovlvRLha50BcR1xAclLWsKttONzFO8MRHAwO8XhLEi3CVRwyci8t3NR4-9tORvjGq5kINhC6AW60luL8cY5BPFzcid7vaGeJ01fVCYNEQHA9EnJDSTwT5cm3tzN-Mj2yYel-TOW8Q3LXKD-EFPa76kMja_1aVVA-ZMFczh2j5pTBnEesITxQ43Ngz13ZXIS22p0z1esWfhy";
@@ -11,12 +12,46 @@ const SharePoll = () => {
   const [copyStatus, setCopyStatus] = useState("content_copy"); // Icon state
 
   // --- HANDLERS ---
-
+  const handleDone = () => {
+    Swal.fire({
+      icon: 'success',
+      title: 'All Set!',
+      text: 'Your poll has been created successfully. Redirecting to dashboard...',
+      confirmButtonColor: '#137fec',
+      confirmButtonText: 'Go to Dashboard'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigate('/dashboard');
+      }
+    });
+  };
   // 1. Handle Copy to Clipboard
   const handleCopy = () => {
     navigator.clipboard.writeText(pollLink).then(() => {
       setCopyStatus("check"); // Change icon to checkmark
+      
+      // Show SweetAlert success notification
+      Swal.fire({
+        icon: 'success',
+        title: 'Copied!',
+        text: 'Poll link copied to clipboard',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000
+      });
+      
       setTimeout(() => setCopyStatus("content_copy"), 2000); // Revert after 2s
+    }).catch(() => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to copy',
+        text: 'Could not copy to clipboard',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000
+      });
     });
   };
 
@@ -32,7 +67,12 @@ const SharePoll = () => {
   
   const handleDownloadQR = () => {
     // In a real app, you'd trigger a download of the image blob
-    alert("QR Download started...");
+    Swal.fire({
+      icon: 'info',
+      title: 'Download Started',
+      text: 'Your QR code is being downloaded...',
+      confirmButtonColor: '#137fec'
+    });
   };
 
   return (
@@ -128,7 +168,7 @@ const SharePoll = () => {
         </div>
 
         {/* Footer Action */}
-        <button className="done-btn" onClick={() => alert("Done! Navigating home...")}>
+        <button className="done-btn" onClick={handleDone}>
           Done
         </button>
 

@@ -1,7 +1,7 @@
 // ===== MainContent/MainContent.jsx - UPDATED (Only ClassNames Changed) =====
 import { useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import Swal from 'sweetalert2';
 const MainContent = ({ activeTab }) => {
   const { state } = useLocation();
   const pollData = state?.pollData || { options: [] }; // Fallback to avoid crash
@@ -44,11 +44,8 @@ const MainContent = ({ activeTab }) => {
   // --- FILE UPLOAD HANDLERS ---
   
   const triggerFileUpload = (ref) => {
-    console.log('upload clicked');
-    if (ref.current) {
-      console.log('inside if');
-      ref.current.click();
-    }
+    console.log('file uploaded');
+    ref?.current?.click();
   };
 
   const handleFileChange = (e, field) => {
@@ -200,15 +197,45 @@ const MainContent = ({ activeTab }) => {
     }));
   };
 
-  const handleSave = () => {
-    handlePreview(); 
-    console.log("Saving configuration:", formData);
-    alert("Configuration saved successfully!");
-  };
+ const handleSave = () => {
+  handlePreview();
+  console.log("Saving configuration:", formData);
+  
+  Swal.fire({
+    icon: 'success',
+    title: 'Success!',
+    text: 'Configuration saved successfully!',
+    confirmButtonColor: '#137fec'
+  });
+};
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this poll?")) return;
-  };
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to revert this!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'No, keep it'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Add your delete logic here (e.g., API call)
+      console.log("Poll deleted");
+      
+      Swal.fire({
+        title: 'Deleted!',
+        text: 'Your poll has been deleted.',
+        icon: 'success',
+        confirmButtonColor: '#137fec'
+      }).then(() => {
+        
+        navigate('/dashboard'); 
+      });
+    }
+  });
+};
 
 // handle the preview function
    const handlePreview = () => {
@@ -715,7 +742,7 @@ const MainContent = ({ activeTab }) => {
                       className="config-form-input"
                       placeholder="Enter logo URL or upload new"
                       value={formData.logo}
-                      onChange={(e) => handleChange("logo", e.target.value)}
+                      onChange={(e) => handleFileChange(e, 'logo')}
                       onBlur={(e) => handleUrlBlur('logo', e.target.value)}
                       style={{ 
                         borderColor: urlErrors.logo ? '#ef4444' : '', 
@@ -852,7 +879,28 @@ const MainContent = ({ activeTab }) => {
 
       {/* ACTION BUTTONS */}
       <div className="config-button-group">
-        <button className="config-btn config-btn-cancel">Cancel</button>
+    <button 
+  onClick={() => {
+    Swal.fire({
+      title: 'Discard changes?',
+      text: "Any unsaved changes will be lost",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, go back',
+      cancelButtonText: 'Stay here'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigate(-1);
+      }
+    });
+  }}
+  className="config-btn" 
+  
+>
+  Cancel
+</button>
         <button className="config-btn config-btn-delete" onClick={handleDelete}>
           Delete Poll
         </button>

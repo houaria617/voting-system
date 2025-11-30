@@ -132,8 +132,7 @@ const Signup = () => {
 
     if (validateForm()) {
       console.log('Signup data:', formData);
-      // Add your signup logic here
-      // navigate('/login');
+      navigate('/dashboard');
     }
   };
 

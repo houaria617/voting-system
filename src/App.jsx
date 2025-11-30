@@ -10,7 +10,7 @@ import PollLandingPage from './pages/PollLandingPage';
 import Home from './pages/Welcome/Welcome';
 import Login from './pages/Login/Login';
  
-
+import Signup from './pages/Signup/Signup';
 import DashboardPage from './pages/DashboardPage';
 import PollPreviewPage from './pages/PollPreviewPage';
 
@@ -22,7 +22,7 @@ function App() {
         {/* Public pages */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/vote/:pollId" element={<VotingInterface />} />
+        <Route path="/Signup" element={< Signup/>}/>
 
         {/* Poll creation flow */}
         <Route path="/create-poll" element={<CreatePollPage />} />

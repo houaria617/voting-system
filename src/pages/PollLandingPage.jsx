@@ -4,13 +4,14 @@ import PollQuestion from '../components/pollLanding/PollQuestion';
 import PollActions from '../components/pollLanding/PollActions';
 import { pollVotingData } from '../data/pollVotingData';
 import '../styles/pollLanding.css';
-
+import { useNavigate, Link } from 'react-router-dom';
 const PollLandingPage = () => {
+  const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState(3); // Pre-selected SvelteKit
 
   const handleBackToDashboard = () => {
     console.log('Navigate back to dashboard');
-    // Later: navigate('/dashboard') with React Router
+    navigate('/dashboard');
   };
 
   const handleOptionChange = (optionId) => {
@@ -19,12 +20,12 @@ const PollLandingPage = () => {
 
   const handleEditPoll = () => {
     console.log('Edit poll');
-    // Later: navigate to edit page or open modal
+    navigate('/configure-poll');
   };
 
   const handleSharePoll = () => {
     console.log('Share poll');
-    // Later: open share dialog or copy link
+    navigate('/share-poll');
   };
 
   return (

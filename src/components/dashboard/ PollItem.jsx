@@ -2,8 +2,12 @@ import React from 'react';
 import { Eye, Edit2, Trash2 } from 'lucide-react';
 import Badge from '../common/Badge';
 import '../../styles/dashboard.css';
-
+import { useNavigate, Link } from 'react-router-dom';
 const PollItem = ({ poll }) => {
+  const navigate = useNavigate();
+   const handleViewPoll = () => {
+    navigate('/poll-preview');
+  };
   return (
     <div className="poll-item">
       <div className="poll-info">
@@ -20,8 +24,8 @@ const PollItem = ({ poll }) => {
         <Badge variant={poll.status.toLowerCase()}>{poll.status}</Badge>
         
         <div className="poll-buttons">
-          <button className="icon-btn">
-            <Eye size={20} />
+          <button className="icon-btn" onClick={handleViewPoll} >
+            <Eye size={20}/>
           </button>
           <button className="icon-btn">
             <Edit2 size={20} />

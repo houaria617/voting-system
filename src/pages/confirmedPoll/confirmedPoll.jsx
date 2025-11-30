@@ -7,7 +7,7 @@ export default function VoteRecorded() {
   const navigate = useNavigate();
 
   const handleBackToDashboard = () => {
-    navigate("/DashboardPage"); // go to your dashboard route
+    navigate("/dashboard"); // go to your dashboard route
   };
 
   return (

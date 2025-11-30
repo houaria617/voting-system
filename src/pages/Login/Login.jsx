@@ -100,7 +100,7 @@ const Login = () => {
       // Add your login logic here
       console.log('Login data:', formData);
       // Navigate to dashboard or home after successful login
-      // navigate('/dashboard');
+      navigate('/dashboard');
     }
   };
 
