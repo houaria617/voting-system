@@ -1,5 +1,5 @@
 // ===== MainContent/MainContent.jsx - UPDATED (Only ClassNames Changed) =====
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const MainContent = ({ activeTab }) => {
@@ -32,6 +32,60 @@ const MainContent = ({ activeTab }) => {
 
   // --- DOMAIN STATE ---
   const [newDomain, setNewDomain] = useState("");
+
+  // REFS FOR FILE UPLOADS
+  // These allow us to click the hidden file inputs programmatically
+  const logoInputRef = useRef(null);
+  const bgInputRef = useRef(null);
+    // URL VALIDATION STATE
+  const [urlErrors, setUrlErrors] = useState({ logo: false, background: false });
+  const [isValidating, setIsValidating] = useState({ logo: false, background: false });
+
+  // --- FILE UPLOAD HANDLERS ---
+  
+  const triggerFileUpload = (ref) => {
+    console.log('upload clicked');
+    if (ref.current) {
+      console.log('inside if');
+      ref.current.click();
+    }
+  };
+
+  const handleFileChange = (e, field) => {
+    // Check if files exist and pick the first one
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, [field]: reader.result }));
+        setUrlErrors(prev => ({ ...prev, [field === 'logo' ? 'logo' : 'background']: false }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // --- URL VALIDATION HANDLERS ---
+
+  const validateImageUrl = (url) => {
+    if (!url) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  };
+
+  const handleUrlBlur = async (field, url) => {
+    if (!url) return;
+
+    setIsValidating(prev => ({ ...prev, [field]: true }));
+    const isValid = await validateImageUrl(url);
+    setIsValidating(prev => ({ ...prev, [field]: false }));
+    
+    setUrlErrors(prev => ({ ...prev, [field]: !isValid }));
+  };
+
 
   // 1. Handle Email Input
   const handleEmailChange = (e) => {
@@ -648,44 +702,55 @@ const MainContent = ({ activeTab }) => {
   <h2>Theme Adjustments</h2>
   <div className="config-section-content">
     
-    {/* LOGO UPLOAD */}
-    <div className="config-form-group">
-      <label className="config-form-label">Company Logo (Optional)</label>
-      <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-        Upload your company logo to display on the poll
-      </p>
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-        <input
-          type="text"
-          className="config-form-input"
-          placeholder="Enter logo URL or upload new"
-          value={formData.logo}
-          onChange={(e) => handleChange("logo", e.target.value)}
-          style={{ flex: 1 }}
-        />
-        <button
-          style={{
-            padding: "0.625rem 1rem",
-            backgroundColor: "#e5e7eb",
-            color: "#111827",
-            border: "1px solid #d1d5db",
-            borderRadius: "0.5rem",
-            fontWeight: "600",
-            fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Upload Logo
-        </button>
-      </div>
-      {formData.logo && (
-        <div style={{ marginTop: "0.75rem" }}>
-          <img src={formData.logo} alt="Logo Preview" style={{ maxWidth: "100px", height: "auto", borderRadius: "0.5rem" }} />
-        </div>
-      )}
-    </div>
+{/* LOGO UPLOAD */}
+              <div className="config-form-group">
+                <label className="config-form-label">Company Logo (Optional)</label>
+                <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+                  Upload your company logo to display on the poll
+                </p>
+                <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <input
+                      type="text"
+                      className="config-form-input"
+                      placeholder="Enter logo URL or upload new"
+                      value={formData.logo}
+                      onChange={(e) => handleChange("logo", e.target.value)}
+                      onBlur={(e) => handleUrlBlur('logo', e.target.value)}
+                      style={{ 
+                        borderColor: urlErrors.logo ? '#ef4444' : '', 
+                        backgroundColor: urlErrors.logo ? '#fef2f2' : '' 
+                      }}
+                    />
+                     {urlErrors.logo && <span style={{color: '#ef4444', fontSize: '0.75rem'}}>⚠️ URL does not point to a valid image</span>}
+                     {isValidating.logo && <span style={{color: '#6b7280', fontSize: '0.75rem'}}>Validating URL...</span>}
+                  </div>
+                  
+                  <button
+                    onClick={() => triggerFileUpload(logoInputRef)}
+                    className="config-btn"
+                    style={{
+                      padding: "0.625rem 1rem",
+                      backgroundColor: "#e5e7eb",
+                      color: "#111827",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "0.5rem",
+                      fontWeight: "600",
+                      fontSize: "0.875rem",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Upload Logo
+                  </button>
+                </div>
+                {formData.logo && !urlErrors.logo && (
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <img src={formData.logo} alt="Logo Preview" style={{ maxWidth: "100px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} />
+                  </div>
+                )}
+              </div>
 
               {/* BACKGROUND IMAGE */}
               <div className="config-form-group">
@@ -693,16 +758,27 @@ const MainContent = ({ activeTab }) => {
                 <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
                   Current image URL or upload new
                 </p>
-                <div style={{ display: "flex", gap: "0.75rem" }}>
-                  <input
-                    type="text"
-                    className="config-form-input"
-                    placeholder="Enter image URL"
-                    value={formData.backgroundImage}
-                    onChange={(e) => handleChange("backgroundImage", e.target.value)}
-                    style={{ flex: 1 }}
-                  />
+                <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <input
+                      type="text"
+                      className="config-form-input"
+                      placeholder="Enter image URL"
+                      value={formData.backgroundImage}
+                      onChange={(e) => handleChange("backgroundImage", e.target.value)}
+                      onBlur={(e) => handleUrlBlur('background', e.target.value)}
+                      style={{ 
+                        borderColor: urlErrors.background ? '#ef4444' : '', 
+                        backgroundColor: urlErrors.background ? '#fef2f2' : '' 
+                      }}
+                    />
+                    {urlErrors.background && <span style={{color: '#ef4444', fontSize: '0.75rem'}}>⚠️ URL does not point to a valid image</span>}
+                    {isValidating.background && <span style={{color: '#6b7280', fontSize: '0.75rem'}}>Validating URL...</span>}
+                  </div>
                   <button
+                    onClick={() => triggerFileUpload(bgInputRef)}
+                    type="button"
+                    className="config-btn"
                     style={{
                       padding: "0.625rem 1rem",
                       backgroundColor: "#e5e7eb",
@@ -719,8 +795,17 @@ const MainContent = ({ activeTab }) => {
                     Upload
                   </button>
                 </div>
+                {formData.backgroundImage && !urlErrors.background && (
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <img 
+                      src={formData.backgroundImage} 
+                      alt="Background Preview" 
+                      style={{ maxWidth: "200px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} 
+                      onError={() => setUrlErrors(prev => ({...prev, background: true}))}
+                    />
+                  </div>
+                )}
               </div>
-
               {/* FONT STYLE */}
               <div className="config-form-group">
                 <label className="config-form-label">Font Style</label>
