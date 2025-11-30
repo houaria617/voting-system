@@ -1,0 +1,40 @@
+.ad-container {
+  height: 100vh;
+  background: #f4f7fb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.ad-card {
+  background: #fff;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.ad-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.ad-message {
+  font-size: 17px;
+  color: #555;
+  margin: 10px 0;
+}
+
+.ad-btn {
+  margin-top: 20px;
+  background: #EA4335;
+  padding: 14px 40px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
