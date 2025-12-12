@@ -1,20 +1,42 @@
-
 import { useState } from "react";
-
-
-import Sidebar from "../../components/Sidebar/Sidebar";
-import MainContent from "../../components/MainContent/MainContent";
+import TopBar from "../../components/ConfigurePoll/TopBar";
+import TabNavigation from "../../components/ConfigurePoll/TabNavigation";
+import MainContent from "../../components/ConfigurePoll/MainContent";
+import BottomBar from "../../components/ConfigurePoll/BottomBar";
 import "../../styles/ConfigurePoll.css";
 
 const PollConfigurationPage = () => {
   const [activeTab, setActiveTab] = useState("General");
+  const [visitedTabs, setVisitedTabs] = useState(["General"]); // Track visited tabs
+  
+  // Mark a tab as visited
+  const markTabAsVisited = (tabName) => {
+    if (!visitedTabs.includes(tabName)) {
+      setVisitedTabs([...visitedTabs, tabName]);
+    }
+  };
 
   return (
-    <div className="layout-container">
-      <div className="main-wrapper">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <MainContent activeTab={activeTab} />
-      </div>
+    <div className="config-page-container">
+      <TopBar />
+      
+      <TabNavigation 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        visitedTabs={visitedTabs}
+      />
+      
+      <MainContent 
+        activeTab={activeTab}
+        markTabAsVisited={markTabAsVisited}
+      />
+      
+      <BottomBar 
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        visitedTabs={visitedTabs}
+        markTabAsVisited={markTabAsVisited}
+      />
     </div>
   );
 };
