@@ -24,7 +24,9 @@ const TabNavigation = ({ activeTab, setActiveTab, visitedTabs }) => {
               disabled={isDisabled}
               className={`config-tab-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
             >
-              <span className="config-tab-icon">{item.icon}</span>
+              <span className="material-symbols-outlined config-tab-icon">
+  {item.icon}
+</span>
               <span className="config-tab-label">{item.label}</span>
             </button>
           );

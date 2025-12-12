@@ -1,24 +1,9 @@
 import { Settings, ClipboardList, Calendar, Zap, Palette } from 'lucide-react';
 
-export const navItems = [
-  {
-    label: "General",
-    icon: <Settings size={20} />  // ⚙️ → Now proper icon
-  },
-  {
-    label: "Voting Rules",
-    icon: <ClipboardList size={20} />  // 📋 → Now proper icon
-  },
-  {
-    label: "Schedule",
-    icon: <Calendar size={20} />  // 📅 → Now proper icon
-  },
-  {
-    label: "Advanced",
-    icon: <Zap size={20} />  // ⚡ → Now proper icon
-  },
-  {
-    label: "Themes",
-    icon: <Palette size={20} />  // 🎨 → Now proper icon
-  }
-];
+ export const navItems = [
+    { icon: "settings", label: "General" },
+    { icon: "palette", label: "Themes" },
+    { icon: "gavel", label: "Voting Rules" },
+    { icon: "calendar_today", label: "Schedule" },
+    { icon: "tune", label: "Advanced" },
+  ];
