@@ -55,32 +55,25 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
     }
   };
 
+  const handlePreview = () => {
+
+    console.log("Sending to preview:", pollData);
+
+    // Navigate to the preview route and pass the data
+    navigate("/poll/:pollId", { state: { pollData: pollData } });
+  };
   // Handle Save & Finish
   const handleSaveAndFinish = () => {
-    Swal.fire({
-      title: 'Publish Poll?',
-      text: "Your poll will be published and ready for voting.",
-      icon: 'success',
-      showCancelButton: true,
-      confirmButtonColor: '#137fec',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Yes, publish it!',
-      cancelButtonText: 'Review again'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // TODO: Save poll as PUBLISHED to Supabase
-        console.log("Publishing poll...", pollData);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Poll Published!',
-          text: 'Your poll is now live and ready for votes.',
-          confirmButtonColor: '#137fec'
-        }).then(() => {
-          navigate('/dashboard');
-        });
-      }
-    });
+    handlePreview();
+    console.log("Saving configuration:", pollData);
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Configuration saved successfully!',
+        confirmButtonColor: '#137fec'
+      });
+
   };
 
   // Handle Cancel

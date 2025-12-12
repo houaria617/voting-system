@@ -149,37 +149,61 @@ const navigate = useNavigate();
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
         
-        {/* Header */}
-        <div style={{
-          padding: '1rem 2rem',
-          backgroundColor: '#F5F7FA',
-          width: '100%'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            maxWidth: '1280px',
-            margin: '0 auto'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              backgroundColor: '#007BFF',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <BarChart3 size={24} color="white" />
-            </div>
-            <span style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              color: '#111827'
-            }}>Pollify</span>
-          </div>
-        </div>
+      {/* Header */}
+<div style={{
+  padding: '1rem 2rem',
+  backgroundColor: '#F5F7FA',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'space-between',   // ⭐ This pushes items apart
+  alignItems: 'center'
+}}>
+  {/* Left side: Logo + Title */}
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem'
+  }}>
+    <div style={{
+      width: '40px',
+      height: '40px',
+      backgroundColor: '#007BFF',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <BarChart3 size={24} color="white" />
+    </div>
+
+    <span style={{
+      fontSize: '1.5rem',
+      fontWeight: '700',
+      color: '#111827'
+    }}>Pollify</span>
+  </div>
+
+  {/* Right side: Dashboard button */}
+  <button
+    onClick={() => navigate('/dashboard')}
+    style={{
+      backgroundColor: '#007BFF',
+      color: 'white',
+      padding: '0.6rem 1.2rem',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '1rem',
+      fontWeight: 600,
+      transition: '0.2s'
+    }}
+    onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+    onMouseLeave={(e) => e.target.style.backgroundColor = '#007BFF'}
+  >
+    Dashboard
+  </button>
+</div>
+
 
         {/* Main Content */}
         <div style={{
