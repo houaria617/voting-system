@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart3, Plus, Trash2, ChevronDown } from 'lucide-react';
 import Swal from 'sweetalert2';
+import API from '../../api/axiosConfig';// here is the api import 
 import { useNavigate } from "react-router-dom";
 // import '../../styles/create_poll.css';
 const CreatePollPage = () => {
@@ -31,85 +32,39 @@ const CreatePollPage = () => {
   };
 const navigate = useNavigate();
   const handleSubmit = async () => {
-  
-  if (question.trim() === '') {
-    setMissingQuestion(true);
-    setmissingoptions(options.map(opt => opt.trim() === ''));
-    Swal.fire({
-      icon: "error",
-      title: "Missing Question",
-      text: "Please enter a poll question"
-    });
-    return;
-  }
+    if (question.trim() === '') {
+        setMissingQuestion(true);
+        Swal.fire({
+            icon: "error",
+            title: "Missing Question",
+            text: "Please enter a poll question"
+        });
+        return;
+    }
 
-  const filledOptions = options.filter(opt => opt.trim() !== '');
-  if (filledOptions.length < 2) {
-    setmissingoptions(options.map(opt => opt.trim() === ''));
-    Swal.fire({
-      icon: "warning",
-      title: "Not Enough Options",
-      text: "Please provide at least 2 answer options."
-    });
-    return;
-  }
+    const filledOptions = options.filter(opt => opt.trim() !== '');
+    if (filledOptions.length < 2) {
+        Swal.fire({
+            icon: "warning",
+            title: "Not Enough Options",
+            text: "Please provide at least 2 answer options."
+        });
+        return;
+    }
 
-  const pollData = {
-    question,
-    options: filledOptions,
-    allowMultipleVotes,
-    expirationDate: hasExpiration ? expirationDate : null
-  };
-  console.log('Poll Created:', pollData);
-  navigate('/configure-poll', { state: { pollData } });
+    // Create poll data object
+    const pollData = {
+        title: question,  // Backend expects "title", not "question"
+        options: filledOptions,
+        settings: {
+            allowMultiple: allowMultipleVotes,
+            visibility: 'ALWAYS'
+        }
+    };
 
-  
-//   try {
-//     const response = await fetch("http://localhost:5000/api/polls", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json"
-//       },
-//       body: JSON.stringify(pollData)
-//     });
-
-//     if (!response.ok) {
-//       throw new Error("Failed to create poll");
-//     }
-
-//     Swal.fire({
-//       icon: "success",
-//       title: "Poll Created!",
-//       text: "Your poll was created successfully."
-//     });
-
-//   } catch (err) {
-//     Swal.fire({
-//       icon: "error",
-//       title: "Error",
-//       text: "Something went wrong. Try again."
-//     });
-//   }
-// };
-
-
-//     const filledOptions = options.filter(opt => opt.trim() !== '');
-//     if (filledOptions.length < 2) {
-//         setmissingoptions(options.map(opt => opt.trim() === ''));
-//       alert('Please provide at least 2 options');
-//       return;
-//     }
-
-//     const pollData = {
-//       question,
-//       options: filledOptions,
-//       allowMultipleVotes,
-//       expirationDate: hasExpiration ? expirationDate : null
-//     };
-
-//     console.log('Poll Created:', pollData);
-//     alert('Poll created successfully!');
-  };
+    // Save to localStorage to pass to next page
+    navigate('/configure-poll', { state: { pollData } });
+};
 
   const handleCancel = () => {
     setQuestion('');

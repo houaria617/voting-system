@@ -3,10 +3,18 @@ import { ChevronLeft, ChevronRight, Edit3 } from "lucide-react";
 import Swal from "sweetalert2";
 import { navItems } from "../../constants/sidebarItems";
 
-const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) => {
+const BottomBar = ({ 
+  activeTab, 
+  setActiveTab, 
+  visitedTabs, 
+  markTabAsVisited,
+  onSave,           // ← ADD THIS
+  isSaving,         // ← ADD THIS (optional, for loading state)
+  pollData          // ← ADD THIS
+}) => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const pollData = state?.pollData || {};
+  const stateData = state?.pollData || {};
 
   const tabs = navItems.map(item => item.label);
   const currentIndex = tabs.indexOf(activeTab);
@@ -28,9 +36,8 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
         cancelButtonText: 'Stay here'
       }).then((result) => {
         if (result.isConfirmed) {
-          // TODO: Save current config as draft before going back
-          console.log("Saving draft before going back...");
-          navigate('/create-poll', { state: { pollData } });
+          console.log("Going back to edit question...");
+          navigate('/create-poll', { state: { pollData: stateData } });
         }
       });
     } else {
@@ -46,34 +53,39 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
       // Save & Finish
       handleSaveAndFinish();
     } else {
-      // TODO: Auto-save to Supabase as draft here
-      console.log("Auto-saving draft...", pollData);
-      
+      // Go to next tab
       const nextTab = tabs[currentIndex + 1];
       markTabAsVisited(nextTab);
       setActiveTab(nextTab);
     }
   };
 
-  const handlePreview = () => {
-
-    console.log("Sending to preview:", pollData);
-
-    // Navigate to the preview route and pass the data
-    navigate("/poll/:pollId", { state: { pollData: pollData } });
-  };
-  // Handle Save & Finish
-  const handleSaveAndFinish = () => {
-    handlePreview();
-    console.log("Saving configuration:", pollData);
-      
+  // Handle Save & Finish - FIXED
+  const handleSaveAndFinish = async () => {
+    try {
+      // Show loading state
       Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Configuration saved successfully!',
-        confirmButtonColor: '#137fec'
+        title: 'Creating Poll...',
+        text: 'Please wait while we save your poll.',
+        icon: 'info',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
       });
 
+      // Call the onSave function from parent (ConfigurePoll)
+      await onSave(); // ✅ CORRECT - onSave is now a prop
+      
+      // Success message will be shown by onSave in parent
+    } catch (err) {
+      console.error("Error saving poll:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Something went wrong. Please try again.'
+      });
+    }
   };
 
   // Handle Cancel
@@ -107,7 +119,6 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
       cancelButtonText: 'No, keep it'
     }).then((result) => {
       if (result.isConfirmed) {
-        // TODO: Delete poll from Supabase
         console.log("Deleting poll...");
         
         Swal.fire({
@@ -147,10 +158,11 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
           <button 
             className="config-bottom-btn config-btn-next"
             onClick={handleNext}
+            disabled={isSaving}  // ← Disable during save
           >
             {isLastTab ? (
               <>
-                <span>Save & Finish</span>
+                <span>{isSaving ? 'Saving...' : 'Save & Finish'}</span>
               </>
             ) : (
               <>
@@ -166,6 +178,7 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
           <button 
             className="config-bottom-btn config-btn-cancel"
             onClick={handleCancel}
+            disabled={isSaving}  // ← Disable during save
           >
             Cancel
           </button>
@@ -173,6 +186,7 @@ const BottomBar = ({ activeTab, setActiveTab, visitedTabs, markTabAsVisited }) =
           <button 
             className="config-bottom-btn config-btn-delete"
             onClick={handleDelete}
+            disabled={isSaving}  // ← Disable during save
           >
             Delete Poll
           </button>

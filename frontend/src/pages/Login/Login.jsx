@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../../styles/Login.css';
+import authService from '../../services/authService'; // Import service
+import Swal from 'sweetalert2';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     emailOrUsername: '',
     password: ''
@@ -20,7 +24,6 @@ const Login = () => {
       [name]: value
     });
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -93,14 +96,40 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // ✅ UPDATED: Call authService instead of direct navigation
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validateForm()) {
-      // Add your login logic here
-      console.log('Login data:', formData);
-      // Navigate to dashboard or home after successful login
-      navigate('/dashboard');
+      setIsLoading(true);
+
+      // Call the service (all business logic)
+      const result = await authService.login(
+        formData.emailOrUsername,
+        formData.password
+      );
+
+      setIsLoading(false);
+
+      if (result.success) {
+        // Success!
+        Swal.fire({
+          icon: 'success',
+          title: 'Login Successful!',
+          text: `Welcome back, ${result.user.name}!`,
+          timer: 2000
+        });
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        // Failed
+        Swal.fire({
+          icon: 'error',
+          title: 'Login Failed',
+          text: result.message
+        });
+      }
     }
   };
 
@@ -130,6 +159,7 @@ const Login = () => {
               onChange={handleChange}
               onBlur={() => handleBlur('emailOrUsername')}
               className={touched.emailOrUsername && errors.emailOrUsername ? 'input-error' : ''}
+              disabled={isLoading}
             />
             {touched.emailOrUsername && errors.emailOrUsername && (
               <span className="error-message">{errors.emailOrUsername}</span>
@@ -147,11 +177,13 @@ const Login = () => {
                 onChange={handleChange}
                 onBlur={() => handleBlur('password')}
                 className={touched.password && errors.password ? 'input-error' : ''}
+                disabled={isLoading}
               />
               <button
                 type="button"
                 className="toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
               >
                 {showPassword 
                 ? <FaEye />
@@ -167,13 +199,19 @@ const Login = () => {
             <Link to="/forgot-password">Forgot Password?</Link>
           </div>
 
-          <button type="submit" className="login-button">Log In</button>
+          <button 
+            type="submit" 
+            className="login-button"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Logging in...' : 'Log In'}
+          </button>
         </form>
 
         <div className="divider">Or continue with</div>
 
         <div className="social-buttons">
-          <button className="social-button google-button">
+          <button className="social-button google-button" disabled={isLoading}>
             <span className="google-icon">G</span>
             Google
           </button>

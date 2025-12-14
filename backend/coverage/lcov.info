@@ -1,5 +1,5 @@
 TN:
-SF:src/app.js
+SF:src\app.js
 FN:22,(anonymous_0)
 FNF:1
 FNH:0
@@ -26,7 +26,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/config/db.js
+SF:src\config\db.js
 FNF:0
 FNH:0
 DA:1,6
@@ -42,7 +42,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/controllers/authController.js
+SF:src\controllers\authController.js
 FN:8,(anonymous_0)
 FN:34,(anonymous_1)
 FN:54,(anonymous_2)
@@ -149,7 +149,7 @@ BRF:19
 BRH:11
 end_of_record
 TN:
-SF:src/controllers/pollController.js
+SF:src\controllers\pollController.js
 FN:13,(anonymous_0)
 FN:59,(anonymous_1)
 FN:95,(anonymous_2)
@@ -356,7 +356,7 @@ BRF:82
 BRH:56
 end_of_record
 TN:
-SF:src/controllers/voteController.js
+SF:src\controllers\voteController.js
 FN:6,(anonymous_0)
 FN:25,(anonymous_1)
 FNF:2
@@ -425,7 +425,7 @@ BRF:20
 BRH:17
 end_of_record
 TN:
-SF:src/middlewares/authMiddleware.js
+SF:src\middlewares\authMiddleware.js
 FN:6,(anonymous_0)
 FN:13,(anonymous_1)
 FN:46,(anonymous_2)
@@ -498,7 +498,7 @@ BRF:16
 BRH:13
 end_of_record
 TN:
-SF:src/models/pollModel.js
+SF:src\models\pollModel.js
 FN:4,(anonymous_0)
 FN:16,(anonymous_1)
 FN:27,(anonymous_2)
@@ -579,7 +579,7 @@ BRF:21
 BRH:10
 end_of_record
 TN:
-SF:src/models/userModel.js
+SF:src\models\userModel.js
 FN:4,(anonymous_0)
 FN:20,(anonymous_1)
 FN:44,(anonymous_2)
@@ -650,7 +650,7 @@ BRF:17
 BRH:8
 end_of_record
 TN:
-SF:src/models/voteModel.js
+SF:src\models\voteModel.js
 FN:4,(anonymous_0)
 FN:17,(anonymous_1)
 FN:30,(anonymous_2)
@@ -690,7 +690,7 @@ BRF:10
 BRH:7
 end_of_record
 TN:
-SF:src/routes/authRoutes.js
+SF:src\routes\authRoutes.js
 FNF:0
 FNH:0
 DA:1,6
@@ -709,7 +709,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/routes/pollRoutes.js
+SF:src\routes\pollRoutes.js
 FNF:0
 FNH:0
 DA:1,6
@@ -729,7 +729,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/utils/emailService.js
+SF:src\utils\emailService.js
 FN:4,(anonymous_0)
 FNF:1
 FNH:1
@@ -751,7 +751,7 @@ BRF:0
 BRH:0
 end_of_record
 TN:
-SF:src/utils/jwtGenerator.js
+SF:src\utils\jwtGenerator.js
 FN:4,(anonymous_0)
 FNF:1
 FNH:1

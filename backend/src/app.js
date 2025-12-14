@@ -9,11 +9,17 @@ const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
 
-// Middlewares
-app.use(express.json()); // Parses incoming JSON
-app.use(cors());         // Allow frontend communication
-app.use(helmet());       // Security headers
-app.use(morgan('dev'));  // Logging
+// FIXED CORS - Add this before other middleware
+const corsOptions = {
+  origin: 'http://localhost:5173',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(helmet());
+app.use(morgan('dev'));
 
 // Routes
 app.use('/api/auth', authRoutes);

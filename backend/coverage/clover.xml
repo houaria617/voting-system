@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1765621353618" clover="3.2.0">
-  <project timestamp="1765621353618" name="All files">
+<coverage generated="1765735922668" clover="3.2.0">
+  <project timestamp="1765735922668" name="All files">
     <metrics statements="389" coveredstatements="320" conditionals="185" coveredconditionals="122" methods="39" coveredmethods="32" elements="613" coveredelements="474" complexity="0" loc="389" ncloc="389" packages="7" files="13" classes="13"/>
     <package name="src">
       <metrics statements="16" coveredstatements="15" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-      <file name="app.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/app.js">
+      <file name="app.js" path="C:\Users\21355\voting-system\backend\src\app.js">
         <metrics statements="16" coveredstatements="15" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -26,7 +26,7 @@
     </package>
     <package name="src.config">
       <metrics statements="7" coveredstatements="7" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-      <file name="db.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/config/db.js">
+      <file name="db.js" path="C:\Users\21355\voting-system\backend\src\config\db.js">
         <metrics statements="7" coveredstatements="7" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -39,7 +39,7 @@
     </package>
     <package name="src.controllers">
       <metrics statements="209" coveredstatements="162" conditionals="121" coveredconditionals="84" methods="13" coveredmethods="12"/>
-      <file name="authController.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/controllers/authController.js">
+      <file name="authController.js" path="C:\Users\21355\voting-system\backend\src\controllers\authController.js">
         <metrics statements="69" coveredstatements="47" conditionals="19" coveredconditionals="11" methods="5" coveredmethods="4"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -111,7 +111,7 @@
         <line num="122" count="0" type="stmt"/>
         <line num="127" count="6" type="stmt"/>
       </file>
-      <file name="pollController.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/controllers/pollController.js">
+      <file name="pollController.js" path="C:\Users\21355\voting-system\backend\src\controllers\pollController.js">
         <metrics statements="104" coveredstatements="83" conditionals="82" coveredconditionals="56" methods="6" coveredmethods="6"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -218,7 +218,7 @@
         <line num="240" count="0" type="stmt"/>
         <line num="244" count="6" type="stmt"/>
       </file>
-      <file name="voteController.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/controllers/voteController.js">
+      <file name="voteController.js" path="C:\Users\21355\voting-system\backend\src\controllers\voteController.js">
         <metrics statements="36" coveredstatements="32" conditionals="20" coveredconditionals="17" methods="2" coveredmethods="2"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -260,7 +260,7 @@
     </package>
     <package name="src.middlewares">
       <metrics statements="38" coveredstatements="34" conditionals="16" coveredconditionals="13" methods="5" coveredmethods="5"/>
-      <file name="authMiddleware.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/middlewares/authMiddleware.js">
+      <file name="authMiddleware.js" path="C:\Users\21355\voting-system\backend\src\middlewares\authMiddleware.js">
         <metrics statements="38" coveredstatements="34" conditionals="16" coveredconditionals="13" methods="5" coveredmethods="5"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -304,7 +304,7 @@
     </package>
     <package name="src.models">
       <metrics statements="81" coveredstatements="66" conditionals="48" coveredconditionals="25" methods="18" coveredmethods="13"/>
-      <file name="pollModel.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/models/pollModel.js">
+      <file name="pollModel.js" path="C:\Users\21355\voting-system\backend\src\models\pollModel.js">
         <metrics statements="35" coveredstatements="28" conditionals="21" coveredconditionals="10" methods="8" coveredmethods="5"/>
         <line num="1" count="6" type="stmt"/>
         <line num="4" count="6" type="stmt"/>
@@ -342,7 +342,7 @@
         <line num="97" count="2" type="stmt"/>
         <line num="100" count="6" type="stmt"/>
       </file>
-      <file name="userModel.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/models/userModel.js">
+      <file name="userModel.js" path="C:\Users\21355\voting-system\backend\src\models\userModel.js">
         <metrics statements="31" coveredstatements="23" conditionals="17" coveredconditionals="8" methods="7" coveredmethods="5"/>
         <line num="1" count="6" type="stmt"/>
         <line num="4" count="6" type="stmt"/>
@@ -376,7 +376,7 @@
         <line num="100" count="33" type="cond" truecount="2" falsecount="0"/>
         <line num="103" count="6" type="stmt"/>
       </file>
-      <file name="voteModel.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/models/voteModel.js">
+      <file name="voteModel.js" path="C:\Users\21355\voting-system\backend\src\models\voteModel.js">
         <metrics statements="15" coveredstatements="15" conditionals="10" coveredconditionals="7" methods="3" coveredmethods="3"/>
         <line num="1" count="6" type="stmt"/>
         <line num="4" count="6" type="stmt"/>
@@ -397,7 +397,7 @@
     </package>
     <package name="src.routes">
       <metrics statements="21" coveredstatements="21" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-      <file name="authRoutes.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/routes/authRoutes.js">
+      <file name="authRoutes.js" path="C:\Users\21355\voting-system\backend\src\routes\authRoutes.js">
         <metrics statements="10" coveredstatements="10" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -410,7 +410,7 @@
         <line num="16" count="6" type="stmt"/>
         <line num="18" count="6" type="stmt"/>
       </file>
-      <file name="pollRoutes.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/routes/pollRoutes.js">
+      <file name="pollRoutes.js" path="C:\Users\21355\voting-system\backend\src\routes\pollRoutes.js">
         <metrics statements="11" coveredstatements="11" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -427,7 +427,7 @@
     </package>
     <package name="src.utils">
       <metrics statements="17" coveredstatements="15" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
-      <file name="emailService.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/utils/emailService.js">
+      <file name="emailService.js" path="C:\Users\21355\voting-system\backend\src\utils\emailService.js">
         <metrics statements="11" coveredstatements="9" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>
@@ -441,7 +441,7 @@
         <line num="26" count="0" type="stmt"/>
         <line num="30" count="6" type="stmt"/>
       </file>
-      <file name="jwtGenerator.js" path="/home/djabir-houaria/Desktop/Voting_system/Voting-system_front/backend/src/utils/jwtGenerator.js">
+      <file name="jwtGenerator.js" path="C:\Users\21355\voting-system\backend\src\utils\jwtGenerator.js">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="1" count="6" type="stmt"/>
         <line num="2" count="6" type="stmt"/>

@@ -3,34 +3,80 @@
 
 // The component remains the same as your original MainContent.jsx from document 2
 // Just make sure it's in the correct folder: components/ConfigurePoll/
-
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
-const MainContent = ({ activeTab, markTabAsVisited }) => {
+// ✅ KEY CHANGE: Add configData and setConfigData as parameters
+const MainContent = ({ 
+  activeTab, 
+  markTabAsVisited,
+  configData,      // ← ADD THIS
+  setConfigData    // ← ADD THIS
+}) => {
   const { state } = useLocation();
   const pollData = state?.pollData || { options: [] };
+  const [dateErrors, setDateErrors] = useState({
+  startDate: false,
+  closeDate: false,
+  startBeforeClose: false
+});
 
-  const [formData, setFormData] = useState({
-    anonymity: "fully-anonymous",
-    visibility: "public",
-    startDate: "",
-    closeDate: "",
-    enableComments: true,
-    showResults: false,
-    allowedVoters: [],
-    allowedDomains: [],
-    minSelectionLimit: 1,
-    selectionLimit: pollData['options'].length,
-    ismultiplechoices: false,
-    selectedTheme: "corporate",
-    backgroundImage: "",
-    logo: "",
-    fontStyle: "inter",
-    primaryColor: "#137fec",
-    secondaryColor: "#ffffff",
-  });
+  // Add validation function
+const validateDates = (startDate, closeDate) => {
+  const errors = {
+    startDate: false,
+    closeDate: false,
+    startBeforeClose: false
+  };
 
+  // Check if dates are empty
+  if (!startDate || startDate.trim() === '') {
+    errors.startDate = true;
+  }
+
+  if (!closeDate || closeDate.trim() === '') {
+    errors.closeDate = true;
+  }
+
+  // Check if start date is before close date
+  if (startDate && closeDate) {
+    const start = new Date(startDate);
+    const close = new Date(closeDate);
+    
+    if (start >= close) {
+      errors.startBeforeClose = true;
+    }
+  }
+
+  setDateErrors(errors);
+  return !errors.startDate && !errors.closeDate && !errors.startBeforeClose;
+};
+
+// Handle date change with validation
+const handleDateChange = (field, value) => {
+  handleChange(field, value);
+  
+  // Clear error for this field when user types
+  if (field === 'startDate') {
+    setDateErrors(prev => ({ ...prev, startDate: false, startBeforeClose: false }));
+  } else if (field === 'closeDate') {
+    setDateErrors(prev => ({ ...prev, closeDate: false, startBeforeClose: false }));
+  }
+};
+
+  // ✅ KEY CHANGE: DELETE the formData and setFormData state
+  // Remove this entire useState block:
+  // const [formData, setFormData] = useState({ ... });
+  
+  // ✅ KEY CHANGE: Create handleChange function to update parent state
+  const handleChange = (field, value) => {
+    setConfigData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Keep all other state (these are local, not form data)
   const [newEmail, setNewEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
   const [newDomain, setNewDomain] = useState("");
@@ -43,12 +89,14 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
     ref?.current?.click();
   };
 
+  // ✅ KEY CHANGE: Update handleFileChange to use setConfigData instead of setFormData
   const handleFileChange = (e, field) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, [field]: reader.result }));
+        // ✅ CHANGED: setFormData → setConfigData
+        setConfigData(prev => ({ ...prev, [field]: reader.result }));
         setUrlErrors(prev => ({ ...prev, [field === 'logo' ? 'logo' : 'background']: false }));
       };
       reader.readAsDataURL(file);
@@ -78,14 +126,16 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
     if (emailError) setEmailError(false);
   };
 
+  // ✅ KEY CHANGE: Update handleAddEmail to use configData and setConfigData
   const handleAddEmail = () => {
     if (!newEmail.trim()) return;
     if (!isValidEmail(newEmail)) {
       setEmailError(true);
       return;
     }
-    if (!formData.allowedVoters.includes(newEmail)) {
-      setFormData(prev => ({
+    // ✅ CHANGED: formData → configData, setFormData → setConfigData
+    if (!configData.allowedVoters.includes(newEmail)) {
+      setConfigData(prev => ({
         ...prev,
         allowedVoters: [...prev.allowedVoters, newEmail]
       }));
@@ -94,21 +144,25 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
     setEmailError(false);
   };
 
+  // ✅ KEY CHANGE: Update removeEmail to use configData and setConfigData
   const removeEmail = (emailToRemove) => {
-    setFormData(prev => ({
+    // ✅ CHANGED: formData → configData, setFormData → setConfigData
+    setConfigData(prev => ({
       ...prev,
       allowedVoters: prev.allowedVoters.filter(email => email !== emailToRemove)
     }));
   };
 
+  // ✅ KEY CHANGE: Update handleAddDomain to use configData and setConfigData
   const handleAddDomain = () => {
     let domain = newDomain.trim();
     if (!domain) return;
     if (!domain.startsWith("@")) {
       domain = "@" + domain;
     }
-    if (!formData.allowedDomains.includes(domain)) {
-      setFormData(prev => ({
+    // ✅ CHANGED: formData → configData, setFormData → setConfigData
+    if (!configData.allowedDomains.includes(domain)) {
+      setConfigData(prev => ({
         ...prev,
         allowedDomains: [...prev.allowedDomains, domain]
       }));
@@ -116,8 +170,10 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
     setNewDomain("");
   };
 
+  // ✅ KEY CHANGE: Update removeDomain to use configData and setConfigData
   const removeDomain = (domainToRemove) => {
-    setFormData(prev => ({
+    // ✅ CHANGED: formData → configData, setFormData → setConfigData
+    setConfigData(prev => ({
       ...prev,
       allowedDomains: prev.allowedDomains.filter(d => d !== domainToRemove)
     }));
@@ -127,7 +183,6 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
-
   const themes = [
     {
       id: "corporate",
@@ -167,12 +222,12 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
     }
   ];
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // const handleChange = (field, value) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [field]: value,
+  //   }));
+  // };
 
   return (
     <main className="config-main-content">
@@ -187,7 +242,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                   type="radio"
                   name="anonymity"
                   value="fully-anonymous"
-                  checked={formData.anonymity === "fully-anonymous"}
+                  checked={configData.anonymity === "fully-anonymous"}
                   onChange={(e) => handleChange("anonymity", e.target.value)}
                 />
                 <div className="config-radio-text">
@@ -200,7 +255,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                   type="radio"
                   name="anonymity"
                   value="show-names"
-                  checked={formData.anonymity === "show-names"}
+                  checked={configData.anonymity === "show-names"}
                   onChange={(e) => handleChange("anonymity", e.target.value)}
                 />
                 <div className="config-radio-text">
@@ -219,7 +274,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                   type="radio"
                   name="visibility"
                   value="public"
-                  checked={formData.visibility === "public"}
+                  checked={configData.visibility === "public"}
                   onChange={(e) => handleChange("visibility", e.target.value)}
                 />
                 <div className="config-radio-text">
@@ -233,7 +288,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                   type="radio"
                   name="visibility"
                   value="private"
-                  checked={formData.visibility === "private"}
+                  checked={configData.visibility === "private"}
                   onChange={(e) => handleChange("visibility", e.target.value)}
                 />
                 <div className="config-radio-text">
@@ -244,7 +299,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
             </div>
           </div>
 
-          {formData.visibility === "private" && (
+          {configData.visibility === "private" && (
             <div className="config-section-card">
               <h2>Allowed Access</h2>
               <div className="config-section-content">
@@ -282,7 +337,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                 </div>
                 {emailError && <p style={{ color: "#ef4444", fontSize: "0.8rem" }}>⚠️ Invalid email format</p>}
 
-                {formData.allowedVoters.length > 0 && (
+                {configData.allowedVoters.length > 0 && (
                   <div style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
                       <thead style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
@@ -292,7 +347,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {formData.allowedVoters.map((email, index) => (
+                        {configData.allowedVoters.map((email, index) => (
                           <tr key={index} style={{ borderBottom: "1px solid #f3f4f6" }}>
                             <td style={{ padding: "10px 15px" }}>{email}</td>
                             <td style={{ padding: "10px 15px", textAlign: "right" }}>
@@ -321,14 +376,14 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                             Total Allowed Voters:
                           </td>
                           <td style={{ padding: "10px 15px", textAlign: "right", fontWeight: "bold", color: "#137fec" }}>
-                            {formData.allowedVoters.length}
+                            {configData.allowedVoters.length}
                           </td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
                 )}
-                {formData.allowedVoters.length === 0 && (
+                {configData.allowedVoters.length === 0 && (
                   <p style={{ color: "#9ca3af", fontStyle: "italic", fontSize: "0.9rem", marginTop: "0.5rem" }}>No emails added yet.</p>
                 )}
 
@@ -360,7 +415,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                   </div>
                   
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {formData.allowedDomains.map((d, i) => (
+                    {configData.allowedDomains.map((d, i) => (
                       <span key={i} style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 8px", borderRadius: "4px", fontSize: "0.85rem" }}>
                         {d} <button onClick={() => removeDomain(d)} style={{ border: "none", background: "none", cursor: "pointer", color: "#1e40af", fontWeight: "bold" }}>×</button>
                       </span>
@@ -382,7 +437,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
               <input
                 type="radio"
                 name="votingType"
-                checked={formData.selectionLimit === 1 && formData.minSelectionLimit === 1}
+                checked={configData.selectionLimit === 1 && configData.minSelectionLimit === 1}
                 onChange={() => {
                   handleChange("minSelectionLimit", 1);
                   handleChange("selectionLimit", 1);
@@ -399,7 +454,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
               <input
                 type="radio"
                 name="votingType"
-                checked={formData.selectionLimit > 1}
+                checked={configData.selectionLimit > 1}
                 onChange={() => {
                   handleChange("minSelectionLimit", 1);
                   handleChange("selectionLimit", 2);
@@ -415,44 +470,197 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
         </div>
       )}
 
-      {/* SCHEDULE TAB */}
       {activeTab === "Schedule" && (
-        <div className="config-section-card">
-          <h2>Schedule</h2>
-          <div className="config-section-content">
-            <div className="config-form-grid">
-              <div className="config-form-group">
-                <label className="config-form-label">Poll Start Date & Time</label>
-                <input
-                  type="datetime-local"
-                  className="config-form-input"
-                  onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                  value={formData.startDate ? formData.startDate.slice(0, 16) : ""}
-                  onChange={(e) => handleChange("startDate", e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
-                  max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 16)}
-                />
-                <p style={{fontSize: "0.75rem", color: "#6b7280", marginTop: "4px"}}>
-                  Limit: 1 year from today
-                </p>
-              </div>
+  <div className="config-section-card">
+    <h2>Schedule</h2>
+    <p style={{ 
+      fontSize: "0.875rem", 
+      color: "#6b7280", 
+      marginBottom: "1.5rem",
+      marginTop: "-0.5rem"
+    }}>
+      Set when your poll will start and end. Both dates are required.
+    </p>
 
-              <div className="config-form-group">
-                <label className="config-form-label">Poll Close Date & Time</label>
-                <input
-                  type="datetime-local"
-                  className="config-form-input"
-                  onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                  value={formData.closeDate ? formData.closeDate.slice(0, 16) : ""}
-                  onChange={(e) => handleChange("closeDate", e.target.value)}
-                  min={formData.startDate ? formData.startDate.slice(0, 16) : new Date().toISOString().slice(0, 16)}
-                  max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().slice(0, 16)}
-                />
-              </div>
-            </div>
+    <div className="config-section-content">
+      <div className="config-form-grid">
+        {/* START DATE */}
+        <div className="config-form-group">
+          <label className="config-form-label" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.25rem' 
+          }}>
+            Poll Start Date & Time
+            <span style={{ color: '#ef4444', fontSize: '1.2rem' }}>*</span>
+          </label>
+          
+          <input
+            type="datetime-local"
+            className="config-form-input"
+            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+            value={configData.startDate ? configData.startDate.slice(0, 16) : ""}
+            onChange={(e) => handleDateChange("startDate", e.target.value)}
+            onBlur={(e) => {
+              const value = e.target.value;
+              if (!value || value.trim() === '') {
+                setDateErrors(prev => ({ ...prev, startDate: true }));
+              }
+            }}
+            min={new Date().toISOString().slice(0, 16)}
+            max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 16)}
+            style={{
+              borderColor: dateErrors.startDate || dateErrors.startBeforeClose ? '#ef4444' : '',
+              backgroundColor: dateErrors.startDate || dateErrors.startBeforeClose ? '#fef2f2' : ''
+            }}
+            required
+          />
+          
+          {dateErrors.startDate && (
+            <p style={{ 
+              color: "#ef4444", 
+              fontSize: "0.75rem", 
+              marginTop: "4px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}>
+              <span>⚠️</span>
+              <span>Start date is required</span>
+            </p>
+          )}
+          
+          {!dateErrors.startDate && (
+            <p style={{
+              fontSize: "0.75rem", 
+              color: "#6b7280", 
+              marginTop: "4px"
+            }}>
+              Maximum: 1 year from today
+            </p>
+          )}
+        </div>
+
+        {/* END DATE */}
+        <div className="config-form-group">
+          <label className="config-form-label" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.25rem' 
+          }}>
+            Poll Close Date & Time
+            <span style={{ color: '#ef4444', fontSize: '1.2rem' }}>*</span>
+          </label>
+          
+          <input
+            type="datetime-local"
+            className="config-form-input"
+            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+            value={configData.closeDate ? configData.closeDate.slice(0, 16) : ""}
+            onChange={(e) => handleDateChange("closeDate", e.target.value)}
+            onBlur={(e) => {
+              const value = e.target.value;
+              if (!value || value.trim() === '') {
+                setDateErrors(prev => ({ ...prev, closeDate: true }));
+              }
+            }}
+            min={configData.startDate ? configData.startDate.slice(0, 16) : new Date().toISOString().slice(0, 16)}
+            max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().slice(0, 16)}
+            style={{
+              borderColor: dateErrors.closeDate || dateErrors.startBeforeClose ? '#ef4444' : '',
+              backgroundColor: dateErrors.closeDate || dateErrors.startBeforeClose ? '#fef2f2' : ''
+            }}
+            required
+          />
+          
+          {dateErrors.closeDate && (
+            <p style={{ 
+              color: "#ef4444", 
+              fontSize: "0.75rem", 
+              marginTop: "4px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}>
+              <span>⚠️</span>
+              <span>Close date is required</span>
+            </p>
+          )}
+          
+          {!dateErrors.closeDate && (
+            <p style={{
+              fontSize: "0.75rem", 
+              color: "#6b7280", 
+              marginTop: "4px"
+            }}>
+              Must be after start date
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* DATE COMPARISON ERROR */}
+      {dateErrors.startBeforeClose && (
+        <div style={{
+          marginTop: "1rem",
+          padding: "0.75rem 1rem",
+          backgroundColor: "#fef2f2",
+          border: "1px solid #fecaca",
+          borderRadius: "0.5rem",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "0.5rem"
+        }}>
+          <span style={{ color: "#ef4444", fontSize: "1.25rem" }}>⚠️</span>
+          <div>
+            <p style={{ 
+              color: "#dc2626", 
+              fontWeight: "600", 
+              fontSize: "0.875rem",
+              marginBottom: "0.25rem"
+            }}>
+              Invalid Date Range
+            </p>
+            <p style={{ 
+              color: "#991b1b", 
+              fontSize: "0.8rem",
+              margin: 0
+            }}>
+              The poll start date must be before the close date. Please adjust your dates.
+            </p>
           </div>
         </div>
       )}
+
+      {/* SUCCESS STATE - Show when both dates are valid */}
+      {configData.startDate && 
+       configData.closeDate && 
+       !dateErrors.startDate && 
+       !dateErrors.closeDate && 
+       !dateErrors.startBeforeClose && (
+        <div style={{
+          marginTop: "1rem",
+          padding: "0.75rem 1rem",
+          backgroundColor: "#f0fdf4",
+          border: "1px solid #bbf7d0",
+          borderRadius: "0.5rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem"
+        }}>
+          <span style={{ color: "#16a34a", fontSize: "1.25rem" }}>✓</span>
+          <p style={{ 
+            color: "#15803d", 
+            fontSize: "0.875rem",
+            margin: 0
+          }}>
+            Poll schedule configured successfully
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
       {/* ADVANCED TAB */}
       {activeTab === "Advanced" && (
@@ -467,7 +675,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
               <label className="config-toggle-switch">
                 <input
                   type="checkbox"
-                  checked={formData.enableComments}
+                  checked={configData.enableComments}
                   onChange={(e) => handleChange("enableComments", e.target.checked)}
                 />
                 <span className="config-toggle-slider"></span>
@@ -482,7 +690,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
               <label className="config-toggle-switch">
                 <input
                   type="checkbox"
-                  checked={formData.showResults}
+                  checked={configData.showResults}
                   onChange={(e) => handleChange("showResults", e.target.checked)}
                 />
                 <span className="config-toggle-slider"></span>
@@ -505,11 +713,11 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                     onClick={() => handleChange("selectedTheme", theme.id)}
                     style={{
                       padding: "1rem",
-                      border: formData.selectedTheme === theme.id ? "2px solid #137fec" : "1px solid #e5e7eb",
+                      border: configData.selectedTheme === theme.id ? "2px solid #137fec" : "1px solid #e5e7eb",
                       borderRadius: "0.5rem",
                       cursor: "pointer",
                       transition: "all 0.2s ease",
-                      backgroundColor: formData.selectedTheme === theme.id ? "#f0f7ff" : "#ffffff",
+                      backgroundColor: configData.selectedTheme === theme.id ? "#f0f7ff" : "#ffffff",
                     }}
                   >
                     <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>
@@ -541,7 +749,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                       type="text"
                       className="config-form-input"
                       placeholder="Enter logo URL or upload new"
-                      value={formData.logo}
+                      value={configData.logo}
                       onChange={(e) => handleChange("logo", e.target.value)}
                       onBlur={(e) => handleUrlBlur('logo', e.target.value)}
                       style={{ 
@@ -580,9 +788,9 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                     Upload Logo
                   </button>
                 </div>
-                {formData.logo && !urlErrors.logo && (
+                {configData.logo && !urlErrors.logo && (
                   <div style={{ marginTop: "0.75rem" }}>
-                    <img src={formData.logo} alt="Logo Preview" style={{ maxWidth: "100px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} />
+                    <img src={configData.logo} alt="Logo Preview" style={{ maxWidth: "100px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} />
                   </div>
                 )}
               </div>
@@ -598,7 +806,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                       type="text"
                       className="config-form-input"
                       placeholder="Enter image URL"
-                      value={formData.backgroundImage}
+                      value={configData.backgroundImage}
                       onChange={(e) => handleChange("backgroundImage", e.target.value)}
                       onBlur={(e) => handleUrlBlur('background', e.target.value)}
                       style={{ 
@@ -638,10 +846,10 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                     Upload
                   </button>
                 </div>
-                {formData.backgroundImage && !urlErrors.background && (
+                {configData.backgroundImage && !urlErrors.background && (
                   <div style={{ marginTop: "0.75rem" }}>
                     <img 
-                      src={formData.backgroundImage} 
+                      src={configData.backgroundImage} 
                       alt="Background Preview" 
                       style={{ maxWidth: "200px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} 
                       onError={() => setUrlErrors(prev => ({...prev, background: true}))}
@@ -654,7 +862,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                 <label className="config-form-label">Font Style</label>
                 <select
                   className="config-form-input"
-                  value={formData.fontStyle}
+                  value={configData.fontStyle}
                   onChange={(e) => handleChange("fontStyle", e.target.value)}
                 >
                   <option value="inter">Inter (Default)</option>
@@ -668,7 +876,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                 <label className="config-form-label">Primary Color</label>
                 <input
                   type="color"
-                  value={formData.primaryColor}
+                  value={configData.primaryColor}
                   onChange={(e) => handleChange("primaryColor", e.target.value)}
                   style={{ width: "100%", height: "40px", cursor: "pointer", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
                 />
@@ -678,7 +886,7 @@ const MainContent = ({ activeTab, markTabAsVisited }) => {
                 <label className="config-form-label">Secondary Color</label>
                 <input
                   type="color"
-                  value={formData.secondaryColor}
+                  value={configData.secondaryColor}
                   onChange={(e) => handleChange("secondaryColor", e.target.value)}
                   style={{ width: "100%", height: "40px", cursor: "pointer", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
                 />
