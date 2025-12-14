@@ -44,6 +44,8 @@ class PollService {
         title: pollData.title || pollData.question,
         description: pollData.description || '',
         options: pollData.options,
+        startDate: configData.startDate, // ✅ Send at root level
+        endDate: configData.closeDate,   // ✅ Send at root level (backend might expect 'endDate')
         theme: {
           primaryColor: configData.primaryColor,
           secondaryColor: configData.secondaryColor,
@@ -61,10 +63,6 @@ class PollService {
           minSelectionLimit: configData.minSelectionLimit || 1,
           enableComments: configData.enableComments,
           showResults: configData.showResults
-        },
-        schedule: {
-          startDate: configData.startDate || null,
-          closeDate: configData.closeDate || null
         },
         invitedEmails: configData.visibility === 'private' ? configData.allowedVoters : [],
         allowedDomains: configData.visibility === 'private' ? configData.allowedDomains : []
@@ -141,7 +139,7 @@ class PollService {
   }
 
   /**
-   * Get a single poll
+   * Get a single poll (with full details)
    * @param {string} pollId - Poll ID
    * @returns {Promise<Object>} Poll data
    */
@@ -161,6 +159,69 @@ class PollService {
         message: err.response?.data?.message || 'Failed to fetch poll'
       };
     }
+  }
+
+  /**
+   * Get poll preview (for creator before publishing)
+   * @param {string} pollId - Poll ID
+   * @returns {Promise<Object>} Poll preview data
+   */
+  async getPollPreview(pollId) {
+    try {
+      const response = await API.get(`/polls/${pollId}/preview`);
+
+      return {
+        success: true,
+        poll: response.data.poll
+      };
+    } catch (err) {
+      console.error('❌ Error fetching poll preview:', err);
+
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Failed to fetch poll preview'
+      };
+    }
+  }
+
+  /**
+   * Format poll data for display
+   * @param {Object} poll - Raw poll data from API
+   * @returns {Object} Formatted poll data
+   */
+  formatPollForDisplay(poll) {
+    return {
+      id: poll.id,
+      question: poll.title,
+      description: poll.description || '',
+      options: poll.options?.map(opt => ({
+        id: opt.id,
+        text: opt.text || opt.option_text,
+        votes: opt.vote_count || 0
+      })) || [],
+      settings: {
+        isAnonymous: poll.settings?.isAnonymous || false,
+        allowMultiple: poll.settings?.allowMultiple || false,
+        showResults: poll.settings?.showResults || false,
+        visibility: poll.settings?.visibility || 'ALWAYS',
+        accessType: poll.settings?.accessType || 'PUBLIC'
+      },
+      theme: {
+        primaryColor: poll.theme?.primaryColor || '#137fec',
+        secondaryColor: poll.theme?.secondaryColor || '#ffffff',
+        selectedTheme: poll.theme?.selectedTheme || 'corporate',
+        logo: poll.theme?.logo || '',
+        backgroundImage: poll.theme?.backgroundImage || '',
+        fontStyle: poll.theme?.fontStyle || 'inter'
+      },
+      schedule: {
+        startDate: poll.schedule?.startDate || poll.start_date,
+        closeDate: poll.schedule?.closeDate || poll.end_date
+      },
+      createdBy: poll.created_by || poll.creator,
+      createdAt: poll.created_at,
+      totalVotes: poll.total_votes || 0
+    };
   }
 
   /**

@@ -124,8 +124,10 @@ const ConfigurePollPage = () => {
           text: result.message,
           confirmButtonColor: '#137fec'
         }).then(() => {
-          // Navigate to poll page
-          navigate(`/poll/${result.poll.id}`);
+          // Navigate to poll preview page with poll data
+          navigate(`/poll/${result.poll.id}`, {
+            state: { poll: result.poll }
+          });
         });
       } else {
         // Error from service
