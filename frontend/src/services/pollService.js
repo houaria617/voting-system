@@ -11,7 +11,7 @@ class PollService {
    */
   async createPoll(pollData, configData) {
     try {
-      // ✅ FIXED: More thorough validation
+      // ✅ Validate required fields
       if (!pollData || !pollData.title || pollData.title.trim() === '') {
         throw new Error('Poll must have a title');
       }
@@ -20,7 +20,7 @@ class PollService {
         throw new Error('Poll must have at least 2 options');
       }
 
-      // ✅ FIXED: Validate dates are present
+      // ✅ Validate dates are present
       if (!configData.startDate || configData.startDate.trim() === '') {
         throw new Error('Start date is required');
       }
@@ -29,7 +29,7 @@ class PollService {
         throw new Error('Close date is required');
       }
 
-      // ✅ FIXED: Validate date logic
+      // ✅ Validate date logic
       const startDate = new Date(configData.startDate);
       const closeDate = new Date(configData.closeDate);
 
@@ -45,11 +45,14 @@ class PollService {
         throw new Error('Start date must be before close date');
       }
 
-      // ✅ FIXED: Build complete poll data with proper field mapping
+      // ✅ Store original options for later use
+      const originalOptions = pollData.options.filter(opt => opt.trim() !== '').map(opt => opt.trim());
+
+      // ✅ Build complete poll data
       const completeData = {
         title: pollData.title.trim(),
         description: pollData.description?.trim() || '',
-        options: pollData.options.filter(opt => opt.trim() !== '').map(opt => opt.trim()),
+        options: originalOptions,
         theme: {
           primaryColor: configData.primaryColor || '#137fec',
           secondaryColor: configData.secondaryColor || '#ffffff',
@@ -83,17 +86,44 @@ class PollService {
 
       console.log('✅ Poll created successfully:', response.data);
 
-      // ✅ FIXED: Handle different response formats
+      // ⚠️ CRITICAL: Check if backend returned options
+      let pollWithOptions = response.data.poll || response.data;
+      
+      if (!pollWithOptions.options && !pollWithOptions.poll_options) {
+        console.warn('⚠️ Backend did not return options! Adding them manually...');
+        pollWithOptions.options = originalOptions;
+      }
+
+      // ⚠️ BACKUP: If backend still didn't return options, fetch the poll again
+      if (!pollWithOptions.options && !pollWithOptions.poll_options && pollWithOptions.id) {
+        console.warn('⚠️ Attempting to fetch poll with options...');
+        try {
+          const fetchResult = await this.getPoll(pollWithOptions.id);
+          if (fetchResult.success && (fetchResult.poll.options || fetchResult.poll.poll_options)) {
+            pollWithOptions = fetchResult.poll;
+            console.log('✅ Successfully fetched poll with options');
+          } else {
+            // Still no options, add them manually as last resort
+            console.error('❌ Backend does not return options - adding manually as fallback');
+            pollWithOptions.options = originalOptions;
+          }
+        } catch (fetchError) {
+          console.error('❌ Failed to fetch poll:', fetchError);
+          // Add options manually as last resort
+          pollWithOptions.options = originalOptions;
+        }
+      }
+
       return {
         success: true,
-        poll: response.data.poll || response.data,
+        poll: pollWithOptions,
         share: response.data.share,
         message: 'Poll created successfully!'
       };
     } catch (err) {
       console.error('❌ Error creating poll:', err);
 
-      // ✅ FIXED: Better error message handling
+      // ✅ Better error message handling
       let errorMessage = 'Failed to create poll';
       
       if (err.response?.data?.message) {
@@ -116,42 +146,23 @@ class PollService {
    * @returns {Promise<Object>} Updated poll data
    */
   async updatePoll(pollId, updateData) {
-  try {
-    // ✅ FIXED: Same format as createPoll for consistency
-    const completeData = {
-      title: updateData.title?.trim() || '',
-      description: updateData.description?.trim() || '',
-      options: updateData.options?.filter(opt => opt.trim() !== '').map(opt => opt.trim()) || [],
-      theme: updateData.theme || {
-        primaryColor: updateData.primaryColor || '#137fec',
-        secondaryColor: updateData.secondaryColor || '#ffffff'
-      },
-      settings: updateData.settings || {},
-      schedule: updateData.schedule || {},
-      invitedEmails: updateData.invitedEmails || [],
-      allowedDomains: updateData.allowedDomains || []
-    };
+    try {
+      const response = await API.put(`/polls/${pollId}`, updateData);
 
-    console.log('📤 Updating poll with data:', completeData);
-    
-    const response = await API.put(`/polls/${pollId}`, completeData);
+      return {
+        success: true,
+        poll: response.data.poll || response.data,
+        message: 'Poll updated successfully!'
+      };
+    } catch (err) {
+      console.error('❌ Error updating poll:', err);
 
-    console.log('✅ Poll updated successfully:', response.data);
-
-    return {
-      success: true,
-      poll: response.data.poll || response.data,
-      message: 'Poll updated successfully!'
-    };
-  } catch (err) {
-    console.error('❌ Error updating poll:', err);
-    return {
-      success: false,
-      message: err.response?.data?.message || err.message || 'Failed to update poll'
-    };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Failed to update poll'
+      };
+    }
   }
-}
-
 
   /**
    * Delete a poll
@@ -184,6 +195,8 @@ class PollService {
   async getPoll(pollId) {
     try {
       const response = await API.get(`/polls/${pollId}`);
+      
+      console.log('📥 Fetched poll data:', response.data);
 
       return {
         success: true,
@@ -245,7 +258,7 @@ class PollService {
       img.onerror = () => resolve(false);
       img.src = url;
       
-      // ✅ ADDED: Timeout to prevent hanging
+      // Timeout to prevent hanging
       setTimeout(() => resolve(false), 5000);
     });
   }

@@ -13,14 +13,18 @@ const MainContent = ({
   markTabAsVisited,
   configData,
   setConfigData,
-  pollData,
-  setPollData,
+  pollData,        // 👈 FROM PARENT
+  setPollData,     // 👈 FROM PARENT
   isEditing
 }) => {
-  const [questionTitle, setQuestionTitle] = useState(pollData.title || '');
-  const [questionDesc, setQuestionDesc] = useState(pollData.description || '');
-  const [options, setOptions] = useState(pollData.options || ['', '']);
+  console.log('🎯 MainContent RECEIVED:', pollData);
+  
+  // ✅ INITIALIZE FROM PARENT PROPS (NOT local state)
+  const [questionTitle, setQuestionTitle] = useState(pollData?.title || '');
+  const [questionDesc, setQuestionDesc] = useState(pollData?.description || '');
+  const [options, setOptions] = useState(pollData?.options || ['', '']);
 
+  // ✅ SYNC BACK TO PARENT IMMEDIATELY
   useEffect(() => {
     setPollData({
       title: questionTitle,
@@ -28,6 +32,7 @@ const MainContent = ({
       options: options
     });
   }, [questionTitle, questionDesc, options, setPollData]);
+
   
   // ✅ Option management functions
   const addOption = () => {
