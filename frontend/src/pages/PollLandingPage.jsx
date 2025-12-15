@@ -10,69 +10,55 @@ import '../styles/pollLanding.css';
 const PollLandingPage = () => {
   const navigate = useNavigate();
   const { pollId } = useParams();
-  const location = useLocation();
+  const { state } = useLocation();
   
   const [poll, setPoll] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ Load poll data on component mount
   useEffect(() => {
-    const fetchPoll = async () => {
+    const loadPollData = async () => {
       try {
-        setLoading(true);
-
-        // Check if poll data was passed via navigation (after creation)
-        if (location.state?.poll) {
-          console.log('📦 Poll from navigation state:', location.state.poll);
-          const formattedPoll = pollService.formatPollForDisplay(location.state.poll);
-          console.log('✅ Formatted poll:', formattedPoll);
-          setPoll(formattedPoll);
-          setLoading(false);
+        // First check if poll data was passed via navigation state
+        if (state?.poll) {
+          console.log('📥 Poll data from state:', state.poll);
+          setPoll(state.poll);
+          setIsLoading(false);
           return;
         }
 
-        // Otherwise fetch from API
-        if (!pollId) {
-          Swal.fire({
-            icon: 'error',
-            title: 'No Poll ID',
-            text: 'Poll ID is missing.',
-            confirmButtonColor: '#137fec'
-          }).then(() => navigate('/dashboard'));
-          return;
-        }
-
-        console.log('🔍 Fetching poll with ID:', pollId);
-        const result = await pollService.getPoll(pollId);
-
-        if (result.success) {
-          console.log('📦 Poll from API:', result.poll);
-          const formattedPoll = pollService.formatPollForDisplay(result.poll);
-          console.log('✅ Formatted poll:', formattedPoll);
-          setPoll(formattedPoll);
+        // If no state data, fetch from API using pollId
+        if (pollId) {
+          console.log('🔄 Fetching poll data for ID:', pollId);
+          const result = await pollService.getPoll(pollId);
+          
+          if (result.success) {
+            console.log('✅ Poll data fetched:', result.poll);
+            setPoll(result.poll);
+          } else {
+            throw new Error(result.message || 'Failed to load poll');
+          }
         } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: result.message,
-            confirmButtonColor: '#137fec'
-          }).then(() => navigate('/dashboard'));
+          throw new Error('No poll data available');
         }
-      } catch (err) {
-        console.error('❌ Error fetching poll:', err);
+      } catch (error) {
+        console.error('❌ Error loading poll:', error);
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: 'Failed to load poll.',
+          title: 'Error Loading Poll',
+          text: error.message || 'Could not load poll data',
           confirmButtonColor: '#137fec'
-        }).then(() => navigate('/dashboard'));
+        }).then(() => {
+          navigate('/dashboard');
+        });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchPoll();
-  }, [pollId, location.state, navigate]);
+    loadPollData();
+  }, [pollId, state, navigate]);
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
@@ -82,94 +68,102 @@ const PollLandingPage = () => {
     setSelectedOption(optionId);
   };
 
-  const handleEditPoll = () => {
+  
+const handleEditPoll = () => {
+  if (!poll) return;
+  
+  console.log('🔍 FULL poll:', poll);
+  
+  // ✅ CORRECT: Handle EXACT API format from your tests
+  const optionsArray = (poll.poll_options || [])
+    .map(opt => opt.option_text || opt.text || opt)  // API returns {option_text: "..."}
+    .filter(opt => opt && opt.trim() !== '');       // Remove truly empty
+  
+  const editData = {
+    title: poll.title || poll.question || '',
+    description: poll.description || '',
+    options: optionsArray.length >= 2 ? optionsArray : ['', '']
+  };
+  
+  console.log('✅ FIXED editData:', editData);
+  console.log('✅ Options:', editData.options);
+  
+  navigate('/configure-poll', {
+    state: {
+      pollData: editData,
+      isEditing: true,
+      pollId: poll.id
+    }
+  });
+};
+
+
+  const handleSharePoll = () => {
     if (!poll) return;
-    navigate(`/configure-poll/${poll.id}`, {
+
+    // Navigate to share page with poll data
+    navigate('/share-poll', {
       state: {
-        pollData: {
-          title: poll.question,
-          description: poll.description,
-          options: poll.options.map(opt => opt.text)
-        },
-        isEdit: true
+        poll: poll,
+        pollId: poll.id
       }
     });
   };
 
-  const handleSharePoll = () => {
-    if (!poll) return;
-    navigate(`/share-poll/${poll.id}`, { state: { poll } });
-  };
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  if (loading) {
+  // ✅ Show loading state
+  if (isLoading) {
     return (
       <div className="poll-landing-page">
         <PageHeader onBackToDashboard={handleBackToDashboard} />
         <main className="poll-landing-main">
           <div className="poll-landing-container">
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '400px',
-              gap: '1rem'
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem',
+              color: '#6b7280' 
             }}>
-              <div style={{
-                width: '50px',
-                height: '50px',
-                border: '4px solid #e5e7eb',
-                borderTopColor: '#137fec',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
-              <p style={{ color: '#6b7280', fontSize: '1rem' }}>Loading poll...</p>
+              <div style={{ 
+                fontSize: '2rem', 
+                marginBottom: '1rem' 
+              }}>
+                ⏳
+              </div>
+              <p>Loading poll preview...</p>
             </div>
           </div>
         </main>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  // ✅ Show error state if no poll
   if (!poll) {
     return (
       <div className="poll-landing-page">
         <PageHeader onBackToDashboard={handleBackToDashboard} />
         <main className="poll-landing-main">
           <div className="poll-landing-container">
-            <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
-              <h2 style={{ fontSize: '1.5rem', color: '#1f2937', marginBottom: '0.5rem' }}>
-                Poll Not Found
-              </h2>
-              <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-                The poll you're looking for doesn't exist.
-              </p>
-              <button
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem',
+              color: '#ef4444' 
+            }}>
+              <div style={{ 
+                fontSize: '2rem', 
+                marginBottom: '1rem' 
+              }}>
+                ⚠️
+              </div>
+              <p>Poll data not available</p>
+              <button 
                 onClick={handleBackToDashboard}
                 style={{
-                  padding: '0.875rem 1.5rem',
+                  marginTop: '1rem',
+                  padding: '0.75rem 1.5rem',
                   backgroundColor: '#137fec',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
+                  borderRadius: '0.5rem',
                   cursor: 'pointer'
                 }}
               >
@@ -182,6 +176,41 @@ const PollLandingPage = () => {
     );
   }
 
+  // ✅ Format poll data for display
+  const formattedPollData = {
+    question: poll.title,
+    description: poll.description || '',
+    // Handle both formats: direct options array or poll_options with option_text
+    options: (poll.options || poll.poll_options?.map((opt, index) => ({
+      id: opt.id || index + 1,
+      text: opt.option_text || opt,
+      votes: opt.vote_count || 0
+    })) || []).map((opt, index) => 
+      typeof opt === 'string' 
+        ? { id: index + 1, text: opt, votes: 0 }
+        : opt
+    ),
+    theme: poll.theme_settings || poll.theme || {},
+    schedule: poll.schedule || {
+      startDate: poll.start_date || poll.startDate,
+      closeDate: poll.close_date || poll.closeDate
+    },
+    settings: poll.settings || {}
+  };
+
+  // ✅ Format dates for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not set';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className="poll-landing-page">
       <PageHeader onBackToDashboard={handleBackToDashboard} />
@@ -193,91 +222,53 @@ const PollLandingPage = () => {
             <p className="page-subtitle">
               This is how your poll will appear to participants. You can go back to edit or proceed to share.
             </p>
+            
+            {/* ✅ Show Poll Schedule */}
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              backgroundColor: '#f0f7ff',
+              borderRadius: '0.5rem',
+              border: '1px solid #bfdbfe'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                gap: '2rem', 
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                fontSize: '0.875rem',
+                color: '#1e40af'
+              }}>
+                <div>
+                  <strong>Start:</strong> {formatDate(formattedPollData.schedule.startDate)}
+                </div>
+                <div>
+                  <strong>End:</strong> {formatDate(formattedPollData.schedule.closeDate)}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <PollQuestion
-            question={poll.question}
-            description={poll.description}
-            options={poll.options}
-            selectedOption={selectedOption}
-            onOptionChange={handleOptionChange}
-            allowMultiple={poll.settings.allowMultiple}
-          />
-
-          {/* Poll Schedule Section */}
+          {/* ✅ Apply Theme if available */}
           <div style={{
-            marginTop: '2rem',
-            backgroundColor: 'white',
+            backgroundColor: formattedPollData.theme.backgroundColor || 'white',
+            backgroundImage: formattedPollData.theme.backgroundImage 
+              ? `url(${formattedPollData.theme.backgroundImage})` 
+              : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             borderRadius: '12px',
-            padding: '2rem',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+            padding: '2rem'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              marginBottom: '1.5rem'
-            }}>
-              <span style={{ fontSize: '1.5rem' }}>📅</span>
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                color: '#1f2937',
-                margin: 0
-              }}>
-                Poll Schedule
-              </h3>
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '2rem'
-            }}>
-              {/* Starts */}
-              <div>
-                <p style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#6b7280',
-                  marginBottom: '0.5rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  Starts
-                </p>
-                <p style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: 0
-                }}>
-                  {formatDate(poll.schedule.startDate)}
-                </p>
-              </div>
-
-              {/* Ends */}
-              <div>
-                <p style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  color: '#6b7280',
-                  marginBottom: '0.5rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  Ends
-                </p>
-                <p style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#1f2937',
-                  margin: 0
-                }}>
-                  {formatDate(poll.schedule.closeDate)}
-                </p>
-              </div>
-            </div>
+            <PollQuestion
+              question={formattedPollData.question}
+              description={formattedPollData.description}
+              options={formattedPollData.options}
+              selectedOption={selectedOption}
+              onOptionChange={handleOptionChange}
+              theme={formattedPollData.theme}
+              isMultipleChoice={formattedPollData.settings.allowMultiple}
+            />
           </div>
 
           <PollActions

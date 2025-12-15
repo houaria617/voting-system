@@ -27,15 +27,15 @@ function App() {
 
         {/* Poll creation flow */}
         <Route path="/create-poll" element={<CreatePollPage />} />
-        <Route path="/configure-poll" element={<ConfigurePollPage />} />
+        <Route path="/configure-poll/:pollId?" element={<ConfigurePollPage />} />
         <Route path="/share-poll" element={<SharePoll />} />
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Poll preview */}
-        <Route path="/poll-preview" element={<PollPreviewPage />} />
         <Route path="/poll/:pollId" element={<PollLandingPage />} />
+        <Route path="/share-poll/:pollId?" element={<SharePoll />} />
       </Routes>
     </Router>
   );

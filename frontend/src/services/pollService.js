@@ -11,40 +11,69 @@ class PollService {
    */
   async createPoll(pollData, configData) {
     try {
-      // Validate required fields
-      if (!pollData.title || !pollData.options || pollData.options.length < 2) {
-        throw new Error('Poll must have a title and at least 2 options');
+      // ✅ FIXED: More thorough validation
+      if (!pollData || !pollData.title || pollData.title.trim() === '') {
+        throw new Error('Poll must have a title');
       }
 
-      // Build complete poll data
+      if (!pollData.options || !Array.isArray(pollData.options) || pollData.options.length < 2) {
+        throw new Error('Poll must have at least 2 options');
+      }
+
+      // ✅ FIXED: Validate dates are present
+      if (!configData.startDate || configData.startDate.trim() === '') {
+        throw new Error('Start date is required');
+      }
+
+      if (!configData.closeDate || configData.closeDate.trim() === '') {
+        throw new Error('Close date is required');
+      }
+
+      // ✅ FIXED: Validate date logic
+      const startDate = new Date(configData.startDate);
+      const closeDate = new Date(configData.closeDate);
+
+      if (isNaN(startDate.getTime())) {
+        throw new Error('Invalid start date format');
+      }
+
+      if (isNaN(closeDate.getTime())) {
+        throw new Error('Invalid close date format');
+      }
+
+      if (startDate >= closeDate) {
+        throw new Error('Start date must be before close date');
+      }
+
+      // ✅ FIXED: Build complete poll data with proper field mapping
       const completeData = {
-        title: pollData.title || pollData.question,
-        description: pollData.description || '',
-        options: pollData.options,
+        title: pollData.title.trim(),
+        description: pollData.description?.trim() || '',
+        options: pollData.options.filter(opt => opt.trim() !== '').map(opt => opt.trim()),
         theme: {
-          primaryColor: configData.primaryColor,
-          secondaryColor: configData.secondaryColor,
-          selectedTheme: configData.selectedTheme,
-          logo: configData.logo,
-          backgroundImage: configData.backgroundImage,
-          fontStyle: configData.fontStyle
+          primaryColor: configData.primaryColor || '#137fec',
+          secondaryColor: configData.secondaryColor || '#ffffff',
+          selectedTheme: configData.selectedTheme || 'corporate',
+          logo: configData.logo || '',
+          backgroundImage: configData.backgroundImage || '',
+          fontStyle: configData.fontStyle || 'inter'
         },
         settings: {
           isAnonymous: configData.anonymity === 'fully-anonymous',
           visibility: configData.visibility === 'public' ? 'ALWAYS' : 'AFTER_VOTE',
           accessType: configData.visibility === 'public' ? 'PUBLIC' : 'PRIVATE',
-          allowMultiple: configData.ismultiplechoice,
+          allowMultiple: configData.ismultiplechoice || false,
           selectionLimit: configData.selectionLimit || 1,
           minSelectionLimit: configData.minSelectionLimit || 1,
-          enableComments: configData.enableComments,
-          showResults: configData.showResults
+          enableComments: configData.enableComments !== undefined ? configData.enableComments : true,
+          showResults: configData.showResults !== undefined ? configData.showResults : false
         },
         schedule: {
-          startDate: configData.startDate || null,
-          closeDate: configData.closeDate || null
+          startDate: configData.startDate,
+          closeDate: configData.closeDate
         },
-        invitedEmails: configData.visibility === 'private' ? configData.allowedVoters : [],
-        allowedDomains: configData.visibility === 'private' ? configData.allowedDomains : []
+        invitedEmails: configData.visibility === 'private' ? (configData.allowedVoters || []) : [],
+        allowedDomains: configData.visibility === 'private' ? (configData.allowedDomains || []) : []
       };
 
       console.log('📤 Creating poll with data:', completeData);
@@ -54,17 +83,28 @@ class PollService {
 
       console.log('✅ Poll created successfully:', response.data);
 
+      // ✅ FIXED: Handle different response formats
       return {
         success: true,
-        poll: response.data.poll,
+        poll: response.data.poll || response.data,
+        share: response.data.share,
         message: 'Poll created successfully!'
       };
     } catch (err) {
       console.error('❌ Error creating poll:', err);
 
+      // ✅ FIXED: Better error message handling
+      let errorMessage = 'Failed to create poll';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       return {
         success: false,
-        message: err.response?.data?.message || err.message || 'Failed to create poll'
+        message: errorMessage
       };
     }
   }
@@ -76,23 +116,42 @@ class PollService {
    * @returns {Promise<Object>} Updated poll data
    */
   async updatePoll(pollId, updateData) {
-    try {
-      const response = await API.put(`/polls/${pollId}`, updateData);
+  try {
+    // ✅ FIXED: Same format as createPoll for consistency
+    const completeData = {
+      title: updateData.title?.trim() || '',
+      description: updateData.description?.trim() || '',
+      options: updateData.options?.filter(opt => opt.trim() !== '').map(opt => opt.trim()) || [],
+      theme: updateData.theme || {
+        primaryColor: updateData.primaryColor || '#137fec',
+        secondaryColor: updateData.secondaryColor || '#ffffff'
+      },
+      settings: updateData.settings || {},
+      schedule: updateData.schedule || {},
+      invitedEmails: updateData.invitedEmails || [],
+      allowedDomains: updateData.allowedDomains || []
+    };
 
-      return {
-        success: true,
-        poll: response.data.poll,
-        message: 'Poll updated successfully!'
-      };
-    } catch (err) {
-      console.error('❌ Error updating poll:', err);
+    console.log('📤 Updating poll with data:', completeData);
+    
+    const response = await API.put(`/polls/${pollId}`, completeData);
 
-      return {
-        success: false,
-        message: err.response?.data?.message || 'Failed to update poll'
-      };
-    }
+    console.log('✅ Poll updated successfully:', response.data);
+
+    return {
+      success: true,
+      poll: response.data.poll || response.data,
+      message: 'Poll updated successfully!'
+    };
+  } catch (err) {
+    console.error('❌ Error updating poll:', err);
+    return {
+      success: false,
+      message: err.response?.data?.message || err.message || 'Failed to update poll'
+    };
   }
+}
+
 
   /**
    * Delete a poll
@@ -112,7 +171,7 @@ class PollService {
 
       return {
         success: false,
-        message: err.response?.data?.message || 'Failed to delete poll'
+        message: err.response?.data?.message || err.message || 'Failed to delete poll'
       };
     }
   }
@@ -128,14 +187,14 @@ class PollService {
 
       return {
         success: true,
-        poll: response.data.poll
+        poll: response.data.poll || response.data
       };
     } catch (err) {
       console.error('❌ Error fetching poll:', err);
 
       return {
         success: false,
-        message: err.response?.data?.message || 'Failed to fetch poll'
+        message: err.response?.data?.message || err.message || 'Failed to fetch poll'
       };
     }
   }
@@ -150,14 +209,14 @@ class PollService {
 
       return {
         success: true,
-        polls: response.data.polls
+        polls: response.data.polls || response.data
       };
     } catch (err) {
       console.error('❌ Error fetching polls:', err);
 
       return {
         success: false,
-        message: err.response?.data?.message || 'Failed to fetch polls'
+        message: err.response?.data?.message || err.message || 'Failed to fetch polls'
       };
     }
   }
@@ -185,6 +244,9 @@ class PollService {
       img.onload = () => resolve(true);
       img.onerror = () => resolve(false);
       img.src = url;
+      
+      // ✅ ADDED: Timeout to prevent hanging
+      setTimeout(() => resolve(false), 5000);
     });
   }
 }

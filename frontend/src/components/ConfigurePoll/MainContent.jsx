@@ -1,82 +1,58 @@
-// Keep your existing MainContent component but move it to:
-// src/components/ConfigurePoll/MainContent.jsx
 
-// The component remains the same as your original MainContent.jsx from document 2
-// Just make sure it's in the correct folder: components/ConfigurePoll/
-import { useState, useRef } from "react";
+
+
+
+// src/components/ConfigurePoll/MainContent.jsx
+// ✅ COMPLETE FIXED VERSION - COPY PASTE THIS ENTIRE FILE
+
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-// ✅ KEY CHANGE: Add configData and setConfigData as parameters
-const MainContent = ({ 
-  activeTab, 
+const MainContent = ({
+  activeTab,
   markTabAsVisited,
-  configData,      // ← ADD THIS
-  setConfigData    // ← ADD THIS
+  configData,
+  setConfigData,
+  pollData,
+  setPollData,
+  isEditing
 }) => {
-  const { state } = useLocation();
-  const pollData = state?.pollData || { options: [] };
-  const [dateErrors, setDateErrors] = useState({
-  startDate: false,
-  closeDate: false,
-  startBeforeClose: false
-});
+  const [questionTitle, setQuestionTitle] = useState(pollData.title || '');
+  const [questionDesc, setQuestionDesc] = useState(pollData.description || '');
+  const [options, setOptions] = useState(pollData.options || ['', '']);
 
-  // Add validation function
-const validateDates = (startDate, closeDate) => {
-  const errors = {
+  useEffect(() => {
+    setPollData({
+      title: questionTitle,
+      description: questionDesc,
+      options: options
+    });
+  }, [questionTitle, questionDesc, options, setPollData]);
+  
+  // ✅ Option management functions
+  const addOption = () => {
+    if (options.length < 10) setOptions([...options, '']);
+  };
+  
+  const removeOption = (index) => {
+    if (options.length > 2) {
+      setOptions(options.filter((_, i) => i !== index));
+    }
+  };
+  
+  const updateOption = (index, value) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+  };
+
+  // ✅ Keep ALL your existing state
+  const [dateErrors, setDateErrors] = useState({
     startDate: false,
     closeDate: false,
     startBeforeClose: false
-  };
+  });
 
-  // Check if dates are empty
-  if (!startDate || startDate.trim() === '') {
-    errors.startDate = true;
-  }
-
-  if (!closeDate || closeDate.trim() === '') {
-    errors.closeDate = true;
-  }
-
-  // Check if start date is before close date
-  if (startDate && closeDate) {
-    const start = new Date(startDate);
-    const close = new Date(closeDate);
-    
-    if (start >= close) {
-      errors.startBeforeClose = true;
-    }
-  }
-
-  setDateErrors(errors);
-  return !errors.startDate && !errors.closeDate && !errors.startBeforeClose;
-};
-
-// Handle date change with validation
-const handleDateChange = (field, value) => {
-  handleChange(field, value);
-  
-  // Clear error for this field when user types
-  if (field === 'startDate') {
-    setDateErrors(prev => ({ ...prev, startDate: false, startBeforeClose: false }));
-  } else if (field === 'closeDate') {
-    setDateErrors(prev => ({ ...prev, closeDate: false, startBeforeClose: false }));
-  }
-};
-
-  // ✅ KEY CHANGE: DELETE the formData and setFormData state
-  // Remove this entire useState block:
-  // const [formData, setFormData] = useState({ ... });
-  
-  // ✅ KEY CHANGE: Create handleChange function to update parent state
-  const handleChange = (field, value) => {
-    setConfigData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  // Keep all other state (these are local, not form data)
   const [newEmail, setNewEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
   const [newDomain, setNewDomain] = useState("");
@@ -89,13 +65,11 @@ const handleDateChange = (field, value) => {
     ref?.current?.click();
   };
 
-  // ✅ KEY CHANGE: Update handleFileChange to use setConfigData instead of setFormData
   const handleFileChange = (e, field) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        // ✅ CHANGED: setFormData → setConfigData
         setConfigData(prev => ({ ...prev, [field]: reader.result }));
         setUrlErrors(prev => ({ ...prev, [field === 'logo' ? 'logo' : 'background']: false }));
       };
@@ -126,14 +100,12 @@ const handleDateChange = (field, value) => {
     if (emailError) setEmailError(false);
   };
 
-  // ✅ KEY CHANGE: Update handleAddEmail to use configData and setConfigData
   const handleAddEmail = () => {
     if (!newEmail.trim()) return;
     if (!isValidEmail(newEmail)) {
       setEmailError(true);
       return;
     }
-    // ✅ CHANGED: formData → configData, setFormData → setConfigData
     if (!configData.allowedVoters.includes(newEmail)) {
       setConfigData(prev => ({
         ...prev,
@@ -144,23 +116,19 @@ const handleDateChange = (field, value) => {
     setEmailError(false);
   };
 
-  // ✅ KEY CHANGE: Update removeEmail to use configData and setConfigData
   const removeEmail = (emailToRemove) => {
-    // ✅ CHANGED: formData → configData, setFormData → setConfigData
     setConfigData(prev => ({
       ...prev,
       allowedVoters: prev.allowedVoters.filter(email => email !== emailToRemove)
     }));
   };
 
-  // ✅ KEY CHANGE: Update handleAddDomain to use configData and setConfigData
   const handleAddDomain = () => {
     let domain = newDomain.trim();
     if (!domain) return;
     if (!domain.startsWith("@")) {
       domain = "@" + domain;
     }
-    // ✅ CHANGED: formData → configData, setFormData → setConfigData
     if (!configData.allowedDomains.includes(domain)) {
       setConfigData(prev => ({
         ...prev,
@@ -170,9 +138,7 @@ const handleDateChange = (field, value) => {
     setNewDomain("");
   };
 
-  // ✅ KEY CHANGE: Update removeDomain to use configData and setConfigData
   const removeDomain = (domainToRemove) => {
-    // ✅ CHANGED: formData → configData, setFormData → setConfigData
     setConfigData(prev => ({
       ...prev,
       allowedDomains: prev.allowedDomains.filter(d => d !== domainToRemove)
@@ -183,57 +149,139 @@ const handleDateChange = (field, value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
-  const themes = [
-    {
-      id: "corporate",
-      name: "Corporate",
-      image: "🏢",
-      description: "Professional and clean design for business polls"
-    },
-    {
-      id: "modern",
-      name: "Modern",
-      image: "✨",
-      description: "Sleek and contemporary style"
-    },
-    {
-      id: "colorful",
-      name: "Colorful",
-      image: "🎨",
-      description: "Vibrant and eye-catching design"
-    },
-    {
-      id: "minimal",
-      name: "Minimal",
-      image: "⚪",
-      description: "Simple and distraction-free"
-    },
-    {
-      id: "dark",
-      name: "Dark Mode",
-      image: "🌙",
-      description: "Easy on the eyes with dark theme"
-    },
-    {
-      id: "nature",
-      name: "Nature",
-      image: "🌿",
-      description: "Earthy tones and natural feel"
-    }
-  ];
 
-  // const handleChange = (field, value) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [field]: value,
-  //   }));
-  // };
+  // ✅ MISSING handleChange FUNCTION - ADD THIS
+  const handleChange = (field, value) => {
+    setConfigData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // ✅ MISSING handleDateChange FUNCTION - ADD THIS
+  const handleDateChange = (field, value) => {
+    setConfigData(prev => ({ ...prev, [field]: value }));
+    setDateErrors(prev => ({ ...prev, [field]: false }));
+    
+    if (field === 'startDate' && configData.closeDate) {
+      const start = new Date(value);
+      const close = new Date(configData.closeDate);
+      if (start >= close) {
+        setDateErrors(prev => ({ ...prev, startBeforeClose: true }));
+      } else {
+        setDateErrors(prev => ({ ...prev, startBeforeClose: false }));
+      }
+    }
+    
+    if (field === 'closeDate' && configData.startDate) {
+      const start = new Date(configData.startDate);
+      const close = new Date(value);
+      if (close <= start) {
+        setDateErrors(prev => ({ ...prev, startBeforeClose: true }));
+      } else {
+        setDateErrors(prev => ({ ...prev, startBeforeClose: false }));
+      }
+    }
+  };
+
+  const themes = [
+    { id: "corporate", name: "Corporate", image: "🏢", description: "Professional and clean design for business polls" },
+    { id: "modern", name: "Modern", image: "✨", description: "Sleek and contemporary style" },
+    { id: "colorful", name: "Colorful", image: "🎨", description: "Vibrant and eye-catching design" },
+    { id: "minimal", name: "Minimal", image: "⚪", description: "Simple and distraction-free" },
+    { id: "dark", name: "Dark Mode", image: "🌙", description: "Easy on the eyes with dark theme" },
+    { id: "nature", name: "Nature", image: "🌿", description: "Earthy tones and natural feel" }
+  ];
 
   return (
     <main className="config-main-content">
-      {/* GENERAL TAB */}
+      {/* ✅ FIXED GENERAL TAB - QUESTION & OPTIONS AT TOP */}
       {activeTab === "General" && (
         <>
+          {/* ✅ NEW QUESTION/OPTIONS SECTION */}
+          <div className="config-section-card">
+            <h2>Poll Question & Options {isEditing && <span style={{color: '#10b981', fontSize: '0.9rem'}}>(Edit Mode)</span>}</h2>
+            
+            <div className="config-form-group" style={{marginBottom: '1.5rem'}}>
+              <label className="config-form-label">Poll Question <span style={{color: '#ef4444'}}>*</span></label>
+              <input
+                type="text"
+                className="config-form-input"
+                placeholder="Enter your poll question..."
+                value={questionTitle}
+                onChange={(e) => setQuestionTitle(e.target.value)}
+                maxLength={200}
+                style={{fontSize: '1.1rem', fontWeight: '500'}}
+              />
+            </div>
+
+            <div className="config-form-group" style={{marginBottom: '1.5rem'}}>
+              <label className="config-form-label">Description (Optional)</label>
+              <textarea
+                className="config-form-input"
+                placeholder="Add more context about your poll..."
+                value={questionDesc}
+                onChange={(e) => setQuestionDesc(e.target.value)}
+                rows={3}
+                maxLength={500}
+              />
+            </div>
+
+            <div className="config-form-group">
+              <label className="config-form-label">Poll Options <span style={{color: '#ef4444'}}>*</span> (Min 2, Max 10)</label>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                {options.map((option, index) => (
+                  <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'end'}}>
+                    <input
+                      className="config-form-input"
+                      placeholder={`Option ${index + 1}`}
+                      value={option}
+                      onChange={(e) => updateOption(index, e.target.value)}
+                      maxLength={100}
+                    />
+                    {options.length > 2 && (
+                      <button
+                        onClick={() => removeOption(index)}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          backgroundColor: '#fee2e2',
+                          color: '#dc2626',
+                          border: 'none',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          fontWeight: '600'
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {options.length < 10 && (
+                <button
+                  onClick={addOption}
+                  style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  + Add Option
+                </button>
+              )}
+              {options.length < 2 && (
+                <p style={{color: '#ef4444', fontSize: '0.875rem', marginTop: '0.5rem'}}>
+                  ⚠️ Poll needs at least 2 options
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* ✅ YOUR EXISTING ANONYMITY SECTION */}
           <div className="config-section-card">
             <h2>Anonymity</h2>
             <div className="config-section-content">
@@ -266,6 +314,7 @@ const handleDateChange = (field, value) => {
             </div>
           </div>
 
+          {/* ✅ YOUR EXISTING VISIBILITY + PRIVATE ACCESS - EXACT SAME */}
           <div className="config-section-card">
             <h2>Visibility</h2>
             <div className="config-section-content">
@@ -282,7 +331,6 @@ const handleDateChange = (field, value) => {
                   <p>Anyone with the link can view and vote.</p>
                 </div>
               </label>
-
               <label className="config-radio-option">
                 <input
                   type="radio"
@@ -315,10 +363,7 @@ const handleDateChange = (field, value) => {
                       backgroundColor: emailError ? "#fef2f2" : "" 
                     }}
                     value={newEmail}
-                    onChange={(e) => {
-                      setNewEmail(e.target.value);
-                      if(emailError) setEmailError(false);
-                    }}
+                    onChange={handleEmailChange}
                   />
                   <button onClick={handleAddEmail} className="config-btn config-btn-small" style={{
                     padding: "0.625rem 1rem",
@@ -337,7 +382,7 @@ const handleDateChange = (field, value) => {
                 </div>
                 {emailError && <p style={{ color: "#ef4444", fontSize: "0.8rem" }}>⚠️ Invalid email format</p>}
 
-                {configData.allowedVoters.length > 0 && (
+                {configData.allowedVoters?.length > 0 && (
                   <div style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
                       <thead style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
@@ -383,7 +428,7 @@ const handleDateChange = (field, value) => {
                     </table>
                   </div>
                 )}
-                {configData.allowedVoters.length === 0 && (
+                {(!configData.allowedVoters || configData.allowedVoters.length === 0) && (
                   <p style={{ color: "#9ca3af", fontStyle: "italic", fontSize: "0.9rem", marginTop: "0.5rem" }}>No emails added yet.</p>
                 )}
 
@@ -415,11 +460,11 @@ const handleDateChange = (field, value) => {
                   </div>
                   
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {configData.allowedDomains.map((d, i) => (
+                    {configData.allowedDomains?.map((d, i) => (
                       <span key={i} style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 8px", borderRadius: "4px", fontSize: "0.85rem" }}>
                         {d} <button onClick={() => removeDomain(d)} style={{ border: "none", background: "none", cursor: "pointer", color: "#1e40af", fontWeight: "bold" }}>×</button>
                       </span>
-                    ))}
+                    )) || []}
                   </div>
                 </div>
               </div>

@@ -3,14 +3,15 @@ import { ChevronLeft, ChevronRight, Edit3 } from "lucide-react";
 import Swal from "sweetalert2";
 import { navItems } from "../../constants/sidebarItems";
 
-const BottomBar = ({ 
-  activeTab, 
-  setActiveTab, 
-  visitedTabs, 
+const BottomBar = ({
+  activeTab,
+  setActiveTab,
+  visitedTabs,
   markTabAsVisited,
-  onSave,           // ← ADD THIS
-  isSaving,         // ← ADD THIS (optional, for loading state)
-  pollData          // ← ADD THIS
+  onSave,
+  isSaving,
+  pollData,
+  isEditing         // ← ADD THIS
 }) => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -22,30 +23,36 @@ const BottomBar = ({
   const isLastTab = currentIndex === tabs.length - 1;
 
   // Handle Previous/Edit Question
-  const handlePrevious = () => {
-    if (isFirstTab) {
-      // Go back to Create Poll page with data
-      Swal.fire({
-        title: 'Edit Question?',
-        text: "You'll be taken back to edit the poll question and options.",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#137fec',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, go back',
-        cancelButtonText: 'Stay here'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          console.log("Going back to edit question...");
-          navigate('/create-poll', { state: { pollData: stateData } });
-        }
-      });
-    } else {
-      // Go to previous tab
-      const previousTab = tabs[currentIndex - 1];
-      setActiveTab(previousTab);
-    }
-  };
+  // ✅ FIXED: Handle Previous/Edit Question
+const handlePrevious = () => {
+  if (isFirstTab) {
+    Swal.fire({
+      title: isEditing ? 'Edit Question?' : 'Go Back?',
+      text: isEditing
+        ? "You'll be taken back to edit the poll question and options."
+        : "You'll lose unsaved progress on configuration.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#137fec',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: isEditing ? 'Yes, edit question' : 'Yes, go back',
+      cancelButtonText: 'Stay here'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigate('/create-poll', {
+          state: {
+            pollData: pollData, // this is pollDataState from parent
+            fromEdit: isEditing
+          }
+        });
+      }
+    });
+  } else {
+    const previousTab = tabs[currentIndex - 1];
+    setActiveTab(previousTab);
+  }
+};
+
 
   // Handle Next
   const handleNext = () => {
