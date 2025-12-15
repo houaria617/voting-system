@@ -1,8 +1,8 @@
 const pollModel = require('../models/pollModel');
 const userModel = require('../models/userModel');
-const voteModel = require('../models/voteModel'); // <--- YOU WERE MISSING THIS
-const requestIp = require('request-ip');          // <--- AND THIS
-const crypto = require('crypto');                 // <--- AND THIS
+const voteModel = require('../models/voteModel');
+const requestIp = require('request-ip');
+const crypto = require('crypto');
 
 // Validation Helper
 const VALID_VISIBILITY = ['ALWAYS', 'AFTER_VOTE', 'CLOSED'];
@@ -12,10 +12,21 @@ const VALID_VISIBILITY = ['ALWAYS', 'AFTER_VOTE', 'CLOSED'];
 // =======================================================
 const createPoll = async (req, res) => {
     try {
-        const { title, description, options, theme, settings, invitedEmails } = req.body;
+        // 1. EXTRACT DATA (Including Dates)
+        const {
+            title,
+            description,
+            options,
+            theme,
+            settings,
+            invitedEmails,
+            startDate, // <--- Critical
+            endDate    // <--- Critical
+        } = req.body;
+
         const creatorId = req.user.id;
 
-        // A. Validation
+        // 2. VALIDATION
         if (!title || title.trim() === "") {
             return res.status(400).json({ message: "Title is required" });
         }
@@ -34,7 +45,7 @@ const createPoll = async (req, res) => {
             }
         }
 
-        // B. Prepare Data
+        // 3. PREPARE DATA
         const accessType = settings?.accessType === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
 
         const finalThemeSettings = {
@@ -50,12 +61,18 @@ const createPoll = async (req, res) => {
             is_anonymous: settings?.isAnonymous || false,
             results_visibility: visibility,
             allow_multiple_choices: settings?.allowMultiple || false,
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+
+            // 4. MAP TO DATABASE COLUMNS
+            // If startDate is missing, use NOW. If endDate is missing, use NULL.
+            start_time: startDate || new Date().toISOString(),
+            end_time: endDate || null
         };
 
-        // C. Database Calls
+        // 5. INSERT INTO DB
         const createdPoll = await pollModel.createPoll(newPollData);
 
+        // ... (The rest of your code for options and invites) ...
         const optionsData = options.map((opt, index) => ({
             poll_id: createdPoll.id,
             option_text: opt,
@@ -90,21 +107,18 @@ const createPoll = async (req, res) => {
 };
 
 // =======================================================
-// 2. GET POLL (With Result Hiding Logic)
+// 2. GET POLL
 // =======================================================
 const getPoll = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // 1. Fetch Poll
         const poll = await pollModel.getPollById(id);
         if (!poll) return res.status(404).json({ message: "Poll not found" });
 
-        // 2. Identify User
         const userId = req.user ? req.user.id : null;
         const isCreator = userId === poll.creator_id;
 
-        // --- A. ACCESS PRIVACY CHECK ---
         const privacy = poll.theme_settings?.access_type || 'PUBLIC';
         if (privacy === 'PRIVATE') {
             if (!userId) return res.status(403).json({ message: "Private Poll. Login required." });
@@ -115,22 +129,16 @@ const getPoll = async (req, res) => {
             }
         }
 
-        // --- B. RESULT VISIBILITY CHECK ---
         let hasVoted = false;
-
         if (userId) {
-            // Check by User ID
             hasVoted = await voteModel.hasUserVoted(poll.id, userId);
         } else {
-            // Check by IP Hash (for guests)
             const clientIp = requestIp.getClientIp(req);
             const ipHash = crypto.createHash('sha256').update(clientIp || 'unknown').digest('hex');
             hasVoted = await voteModel.hasIpVoted(poll.id, ipHash);
         }
 
-        // Decision Logic
         let showResults = false;
-
         if (isCreator) {
             showResults = true;
         } else if (poll.results_visibility === 'ALWAYS') {
@@ -141,10 +149,9 @@ const getPoll = async (req, res) => {
             showResults = hasVoted;
         }
 
-        // --- C. SANITIZE DATA ---
         if (!showResults) {
             poll.poll_options = poll.poll_options.map(opt => {
-                const { vote_count_cache, ...safeOption } = opt; // Remove count
+                const { vote_count_cache, ...safeOption } = opt;
                 return safeOption;
             });
         }
@@ -159,13 +166,14 @@ const getPoll = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 };
+
 // =======================================================
-// 3. GET USER DASHBOARD (My Polls + Search)
+// 3. GET DASHBOARD
 // =======================================================
 const getDashboard = async (req, res) => {
     try {
-        const userId = req.user.id; // From Middleware
-        const { search } = req.query; // Get ?search=... from URL
+        const userId = req.user.id;
+        const { search } = req.query;
 
         const polls = await pollModel.getUserPolls(userId, search);
 
@@ -179,39 +187,34 @@ const getDashboard = async (req, res) => {
         res.status(500).json({ message: "Server Error fetching dashboard" });
     }
 };
+
 // =======================================================
 // 4. EDIT POLL
 // =======================================================
 const editPoll = async (req, res) => {
     try {
-        const { id } = req.params; // Poll ID
-        const { title, description, theme, settings, status } = req.body;
+        const { id } = req.params;
+        // 3. Added startDate and endDate to destructuring
+        const { title, description, theme, settings, status, startDate, endDate } = req.body;
         const userId = req.user.id;
 
-        // 1. Fetch Existing Poll
         const poll = await pollModel.getPollById(id);
         if (!poll) return res.status(404).json({ message: "Poll not found" });
 
-        // 2. Permission Check (Must be Creator)
         if (poll.creator_id !== userId) {
             return res.status(403).json({ message: "You are not authorized to edit this poll." });
         }
 
-        // 3. Status Check (Cannot edit if CLOSED)
         if (poll.status === 'CLOSED') {
             return res.status(400).json({ message: "Cannot edit a closed poll." });
         }
 
-        // 4. Prepare Update Data
-        // We merge the new theme/settings with existing ones to avoid losing data
         const currentTheme = poll.theme_settings || {};
-
-        // Logic: If user sends accessType, update it, otherwise keep old one
         const newAccessType = settings?.accessType || currentTheme.access_type;
 
         const updatedTheme = {
             ...currentTheme,
-            ...(theme || {}), // Overwrite colors/fonts if provided
+            ...(theme || {}),
             access_type: newAccessType
         };
 
@@ -220,14 +223,14 @@ const editPoll = async (req, res) => {
         if (description) updateData.description = description;
         updateData.theme_settings = updatedTheme;
 
-        // settings updates
+        // 4. Handle Date Updates
+        if (startDate) updateData.start_time = startDate;
+        if (endDate) updateData.end_time = endDate;
+
         if (settings?.isAnonymous !== undefined) updateData.is_anonymous = settings.isAnonymous;
         if (settings?.visibility) updateData.results_visibility = settings.visibility;
-
-        // Allow closing/opening the poll
         if (status) updateData.status = status;
 
-        // 5. Update DB
         const updatedPoll = await pollModel.updatePoll(id, updateData);
 
         res.json({
@@ -247,4 +250,3 @@ module.exports = {
     getDashboard,
     editPoll
 };
-
