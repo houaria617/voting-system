@@ -12,7 +12,7 @@ const VALID_VISIBILITY = ['ALWAYS', 'AFTER_VOTE', 'CLOSED'];
 // =======================================================
 const createPoll = async (req, res) => {
     try {
-        const { title, description, options, theme, settings, invitedEmails } = req.body;
+        const { title, description, options, theme, settings, invitedEmails, startDate, endDate } = req.body;
         const creatorId = req.user.id;
 
         // A. Validation
