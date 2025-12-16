@@ -1,32 +1,31 @@
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // <--- Ensure this is installed: npm install cors
 const helmet = require('helmet');
 const morgan = require('morgan');
 
-// Import Routes
 const authRoutes = require('./routes/authRoutes');
 const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
 
-// FIXED CORS - Add this before other middleware
-const corsOptions = {
-  origin: 'http://localhost:5173',
-  credentials: true,
-  optionsSuccessStatus: 204
-};
+// ==================================================================
+// 🛑 CORS CONFIGURATION (MUST BE THE FIRST MIDDLEWARE)
+// ==================================================================
+app.use(cors({
+  origin: 'http://localhost:5173', // <--- EXACT URL of your Frontend (No trailing slash)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Required if you are sending cookies or auth headers
+}));
 
-app.use(cors(corsOptions));
-app.use(express.json());
+// ==================================================================
+
 app.use(helmet());
 app.use(morgan('dev'));
+app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/polls', pollRoutes);
-
-app.get('/', (req, res) => {
-    res.send('Polling System API is running');
-});
 
 module.exports = app;

@@ -10,42 +10,38 @@ import SharePoll from './pages/sharePoll/sharePoll';
 import PollLandingPage from './pages/PollLandingPage';
 import Home from './pages/Welcome/Welcome';
 import Login from './pages/Login/Login';
- 
 import Signup from './pages/Signup/Signup';
 import DashboardPage from './pages/DashboardPage';
 import PollPreviewPage from './pages/PollPreviewPage';
+import VoterPage from './pages/VotePage'; 
 
 function App() {
-                                                
-    return (
+  return (
     <Router>
       <Routes>
         {/* Public pages */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/Signup" element={< Signup/>}/>
-
+        <Route path="/Signup" element={<Signup />} />
+        
         {/* Poll creation flow */}
         <Route path="/create-poll" element={<CreatePollPage />} />
         <Route path="/configure-poll/:pollId?" element={<ConfigurePollPage />} />
         <Route path="/share-poll" element={<SharePoll />} />
-
+        
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
-
-        {/* Poll preview */}
+        
+        {/* Poll pages */}
         <Route path="/poll/:pollId" element={<PollLandingPage />} />
+        <Route path="/vote/:pollId" element={<VoterPage />} /> 
         <Route path="/share-poll/:pollId?" element={<SharePoll />} />
       </Routes>
     </Router>
   );
-  
-  
-  
 }
 
 export default App;
-
 
 // import { useState } from 'react'
 // import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
