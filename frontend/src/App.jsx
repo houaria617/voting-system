@@ -10,7 +10,8 @@ import SharePoll from './pages/sharePoll/sharePoll';
 import PollLandingPage from './pages/PollLandingPage';
 import Home from './pages/Welcome/Welcome';
 import Login from './pages/Login/Login';
- 
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Signup from './pages/Signup/Signup';
 import DashboardPage from './pages/DashboardPage';
 import PollPreviewPage from './pages/PollPreviewPage';
@@ -24,6 +25,10 @@ function App() {
         {/* Public pages */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+
         <Route path="/Signup" element={< Signup/>}/>
 
         {/* Poll creation flow */}

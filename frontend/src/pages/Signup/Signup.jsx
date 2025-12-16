@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../../styles/Signup.css';
-import authService from '../../services/authService'; // Import service
+import authService from '../../services/authService';
 import Swal from 'sweetalert2';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -10,7 +10,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -107,7 +107,6 @@ const Signup = () => {
       }
     });
 
-    // Special check for confirmPassword
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.confirmPassword !== formData.password) {
@@ -125,14 +124,12 @@ const Signup = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ UPDATED: Call authService instead of direct navigation
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validateForm()) {
       setIsLoading(true);
 
-      // Call the service (all business logic)
       const result = await authService.signup(
         formData.fullName,
         formData.email,
@@ -142,18 +139,15 @@ const Signup = () => {
       setIsLoading(false);
 
       if (result.success) {
-        // Success!
         Swal.fire({
           icon: 'success',
           title: 'Signup Successful!',
           text: `Welcome, ${result.user.name}!`,
           timer: 2000
         });
-        
-        // Navigate to dashboard
+
         navigate('/dashboard');
       } else {
-        // Failed
         Swal.fire({
           icon: 'error',
           title: 'Signup Failed',
@@ -232,9 +226,7 @@ const Signup = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
               >
-                {showPassword 
-                ? <FaEye />
-                : <FaEyeSlash />}
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
             {touched.password && errors.password && (
@@ -261,9 +253,7 @@ const Signup = () => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 disabled={isLoading}
               >
-                {showConfirmPassword
-                ? <FaEye />
-                : <FaEyeSlash />}
+                {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
             {touched.confirmPassword && errors.confirmPassword && (
@@ -271,8 +261,8 @@ const Signup = () => {
             )}
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="signup-button"
             disabled={isLoading}
           >
@@ -280,14 +270,6 @@ const Signup = () => {
           </button>
         </form>
 
-        <div className="divider">Or continue with</div>
-
-        <div className="social-buttons">
-          <button className="social-button google-button" disabled={isLoading}>
-            <span className="google-icon">G</span>
-            Google
-          </button>
-        </div>
 
         <p className="login-link">
           Already have an account? <Link to="/login">Log in</Link>
