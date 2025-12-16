@@ -334,18 +334,18 @@ const ConfigurePollPage = () => {
         isEditing={isEditing}
       />
       
-      <BottomBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        visitedTabs={visitedTabs}
-        markTabAsVisited={markTabAsVisited}
-        onSave={savePoll}
-        isSaving={isSaving}
-        pollData={pollDataState}
-        configData={configData} // ✅ Make sure this is here
-        isEditing={isEditing}
-        pollId={pollId}
-      />
+   <BottomBar
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  visitedTabs={visitedTabs}
+  markTabAsVisited={markTabAsVisited}
+  onSave={savePoll}
+  isSaving={isSaving}
+  pollData={pollDataState}        // ← ADD THIS
+  configData={configData}          // ← ADD THIS
+  isEditing={isEditing}
+  pollId={pollId}
+/>
     </div>
   );
 };

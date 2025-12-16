@@ -171,25 +171,59 @@ const deletePoll = async (req, res) => {
         const { id } = req.params;
         const userId = req.user.id;
 
+        console.log('🗑️ DELETE REQUEST for poll:', id, 'by user:', userId);
+
         const poll = await pollModel.getPollById(id);
-        if (!poll) return res.status(404).json({ message: "Poll not found" });
-        if (poll.creator_id !== userId) return res.status(403).json({ message: "Unauthorized" });
+        
+        if (!poll) {
+            console.log('❌ Poll not found:', id);
+            return res.status(404).json({ message: "Poll not found" });
+        }
+        
+        if (poll.creator_id !== userId) {
+            console.log('❌ Unauthorized delete attempt');
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        console.log('✅ Poll found, status:', poll.status);
 
         // Allow deleting DRAFT polls anytime
-        // Prevent deleting CLOSED polls with votes
+        if (poll.status === 'DRAFT') {
+            console.log('📝 Deleting DRAFT poll...');
+            await pollModel.deletePoll(id);
+            return res.json({ message: "Poll deleted successfully" });
+        }
+
+        // For CLOSED polls, check votes
         if (poll.status === 'CLOSED') {
-            const voteCount = await pollModel.getVoteCount(id);
-            if (voteCount > 0) {
-                return res.status(400).json({ message: "Cannot delete closed poll with votes" });
+            console.log('🔒 Checking vote count for CLOSED poll...');
+            try {
+                const voteCount = await pollModel.getVoteCount(id);
+                console.log('📊 Vote count:', voteCount);
+                
+                if (voteCount > 0) {
+                    return res.status(400).json({ 
+                        message: "Cannot delete closed poll with votes" 
+                    });
+                }
+            } catch (voteError) {
+                console.error('⚠️ Vote count check failed:', voteError);
+                // Continue with deletion even if vote check fails
             }
         }
 
+        console.log('✅ Proceeding with deletion...');
         await pollModel.deletePoll(id);
+        
+        console.log('✅ Poll deleted successfully');
         res.json({ message: "Poll deleted successfully" });
-
+        
     } catch (err) {
-        console.error("Delete Poll Error:", err);
-        res.status(500).json({ message: "Server Error" });
+        console.error("❌ Delete Poll Error:", err);
+        res.status(500).json({ 
+            message: "Server Error", 
+            error: err.message 
+        });
     }
 };
 

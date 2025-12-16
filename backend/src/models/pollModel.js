@@ -98,13 +98,15 @@ const updatePoll = async (pollId, updateData) => {
 };
 // 8. DELETE POLL (Soft delete - set status to DELETED)
 const deletePoll = async (pollId) => {
+    await supabase.from('poll_options').delete().eq('poll_id', pollId);
+    await supabase.from('allowed_voters').delete().eq('poll_id', pollId);
+    await supabase.from('votes').delete().eq('poll_id', pollId);
+    
     const { data, error } = await supabase
         .from('polls')
-        .update({ status: 'DELETED', deleted_at: new Date() })
-        .eq('id', pollId)
-        .select()
-        .single();
-
+        .delete()
+        .eq('id', pollId);
+    
     if (error) throw error;
     return data;
 };
@@ -133,16 +135,13 @@ const deleteAllowedVoters = async (pollId) => {
 
 // 11. GET VOTE COUNT (For safety check before delete)
 const getVoteCount = async (pollId) => {
-  try {
-    const result = await db.query(
-      'SELECT COUNT(*) as count FROM votes WHERE poll_id = $1',
-      [pollId]
-    );
-    return parseInt(result.rows[0].count);
-  } catch (error) {
-    console.error('Error getting vote count:', error);
-    return 0;
-  }
+    const { data, error } = await supabase
+        .from('votes')
+        .select('id', { count: 'exact' })
+        .eq('poll_id', pollId);
+
+    if (error) throw error;
+    return data ? data.length : 0;
 };
 
 
