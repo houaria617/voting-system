@@ -12,7 +12,7 @@ const VALID_VISIBILITY = ['ALWAYS', 'AFTER_VOTE', 'CLOSED'];
 // =======================================================
 const createPoll = async (req, res) => {
     try {
-        const { title, description, options, theme, settings, invitedEmails } = req.body;
+         const { title, description, options, theme, settings, invitedEmails, schedule } = req.body;
         const creatorId = req.user.id;
 
         // A. Validation
@@ -42,16 +42,26 @@ const createPoll = async (req, res) => {
             access_type: accessType
         };
 
-        const newPollData = {
-            creator_id: creatorId,
-            title,
-            description,
-            theme_settings: finalThemeSettings,
-            is_anonymous: settings?.isAnonymous || false,
-            results_visibility: visibility,
-            allow_multiple_choices: settings?.allowMultiple || false,
-            status: 'ACTIVE'
-        };
+        const startTime = req.body.schedule?.startDate
+  ? new Date(req.body.schedule.startDate).toISOString()
+  : null;
+
+const endTime = req.body.schedule?.closeDate
+  ? new Date(req.body.schedule.closeDate).toISOString()
+  : null;
+
+const newPollData = {
+  creator_id: creatorId,
+  title,
+  description,
+  theme_settings: finalThemeSettings,
+  is_anonymous: settings?.isAnonymous || false,
+  start_time: schedule?.startDate || null,      // ✅ ADD THIS LINE
+    end_time: schedule?.closeDate || null,        // ✅ ADD THIS LINE
+  results_visibility: visibility,
+  allow_multiple_choices: settings?.allowMultiple || false,
+  status: 'ACTIVE'
+};
 
         // C. Database Calls
         console.log('📝 [CREATE] Creating poll with data:', newPollData);
@@ -216,7 +226,7 @@ const getDashboard = async (req, res) => {
 const editPoll = async (req, res) => {
     try {
         const { id } = req.params; // Poll ID
-        const { title, description, theme, settings, status } = req.body;
+        const { title, description, theme, settings, schedule, status } = req.body;
         const userId = req.user.id;
 
         // 1. Fetch Existing Poll
@@ -250,6 +260,8 @@ const editPoll = async (req, res) => {
         if (title) updateData.title = title;
         if (description) updateData.description = description;
         updateData.theme_settings = updatedTheme;
+       if (schedule?.startDate !== undefined) updateData.start_time = schedule.startDate;  // ✅ ADD
+  if (schedule?.closeDate !== undefined) updateData.end_time = schedule.closeDate;    // ✅ ADD
 
         // settings updates
         if (settings?.isAnonymous !== undefined) updateData.is_anonymous = settings.isAnonymous;

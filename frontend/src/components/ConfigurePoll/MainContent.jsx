@@ -2,8 +2,7 @@
 
 
 
-// src/components/ConfigurePoll/MainContent.jsx
-// ✅ COMPLETE FIXED VERSION - COPY PASTE THIS ENTIRE FILE
+
 
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -13,18 +12,16 @@ const MainContent = ({
   markTabAsVisited,
   configData,
   setConfigData,
-  pollData,        // 👈 FROM PARENT
-  setPollData,     // 👈 FROM PARENT
+  pollData,
+  setPollData,
   isEditing
 }) => {
-  console.log('🎯 MainContent RECEIVED:', pollData);
+  console.log('MainContent RECEIVED:', pollData);
   
-  // ✅ INITIALIZE FROM PARENT PROPS (NOT local state)
   const [questionTitle, setQuestionTitle] = useState(pollData?.title || '');
   const [questionDesc, setQuestionDesc] = useState(pollData?.description || '');
   const [options, setOptions] = useState(pollData?.options || ['', '']);
 
-  // ✅ SYNC BACK TO PARENT IMMEDIATELY
   useEffect(() => {
     setPollData({
       title: questionTitle,
@@ -33,8 +30,6 @@ const MainContent = ({
     });
   }, [questionTitle, questionDesc, options, setPollData]);
 
-  
-  // ✅ Option management functions
   const addOption = () => {
     if (options.length < 10) setOptions([...options, '']);
   };
@@ -51,7 +46,6 @@ const MainContent = ({
     setOptions(newOptions);
   };
 
-  // ✅ Keep ALL your existing state
   const [dateErrors, setDateErrors] = useState({
     startDate: false,
     closeDate: false,
@@ -155,12 +149,10 @@ const MainContent = ({
     return emailRegex.test(email);
   };
 
-  // ✅ MISSING handleChange FUNCTION - ADD THIS
   const handleChange = (field, value) => {
     setConfigData(prev => ({ ...prev, [field]: value }));
   };
 
-  // ✅ MISSING handleDateChange FUNCTION - ADD THIS
   const handleDateChange = (field, value) => {
     setConfigData(prev => ({ ...prev, [field]: value }));
     setDateErrors(prev => ({ ...prev, [field]: false }));
@@ -186,7 +178,7 @@ const MainContent = ({
     }
   };
 
-  const themes = [
+    const themes = [
     { id: "corporate", name: "Corporate", image: "🏢", description: "Professional and clean design for business polls" },
     { id: "modern", name: "Modern", image: "✨", description: "Sleek and contemporary style" },
     { id: "colorful", name: "Colorful", image: "🎨", description: "Vibrant and eye-catching design" },
@@ -197,12 +189,58 @@ const MainContent = ({
 
   return (
     <main className="config-main-content">
-      {/* ✅ FIXED GENERAL TAB - QUESTION & OPTIONS AT TOP */}
       {activeTab === "General" && (
         <>
-          {/* ✅ NEW QUESTION/OPTIONS SECTION */}
+          {/* Edit Mode Warning Banner */}
+          {isEditing && (
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#fffbeb',
+              border: '2px solid #fbbf24',
+              borderRadius: '0.5rem',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <h3 style={{ margin: 0, marginBottom: '0.5rem', color: '#92400e', fontSize: '1rem', fontWeight: '600' }}>
+                    Edit Mode - Some Fields Are Locked
+                  </h3>
+                  <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#78350f', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                    <li><strong>Poll Options</strong> cannot be changed after creation</li>
+                    <li><strong>Voting Type</strong> (single/multiple choice) is locked</li>
+                    <li><strong>Access Control</strong> (allowed voters/domains) is locked</li>
+                  </ul>
+                  <p style={{ margin: '0.5rem 0 0 0', color: '#78350f', fontSize: '0.875rem' }}>
+                    <strong>You CAN edit:</strong> Title, Description, Theme, Schedule, and Advanced settings
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Poll Question & Options */}
           <div className="config-section-card">
-            <h2>Poll Question & Options {isEditing && <span style={{color: '#10b981', fontSize: '0.9rem'}}>(Edit Mode)</span>}</h2>
+            <h2>
+              Poll Question & Options
+              {isEditing && (
+                <span style={{
+                  marginLeft: '0.75rem',
+                  padding: '0.25rem 0.75rem',
+                  backgroundColor: '#dbeafe',
+                  color: '#1e40af',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600
+                }}>
+                  Edit Mode
+                </span>
+              )}
+            </h2>
             
             <div className="config-form-group" style={{marginBottom: '1.5rem'}}>
               <label className="config-form-label">Poll Question <span style={{color: '#ef4444'}}>*</span></label>
@@ -230,7 +268,30 @@ const MainContent = ({
             </div>
 
             <div className="config-form-group">
-              <label className="config-form-label">Poll Options <span style={{color: '#ef4444'}}>*</span> (Min 2, Max 10)</label>
+              <label className="config-form-label">
+                Poll Options <span style={{color: '#ef4444'}}>*</span> (Min 2, Max 10)
+                {isEditing && (
+                  <span style={{
+                    marginLeft: '0.5rem',
+                    padding: '0.25rem 0.5rem',
+                    backgroundColor: '#fef3c7',
+                    color: '#92400e',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Locked
+                  </span>
+                )}
+              </label>
+              
               <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
                 {options.map((option, index) => (
                   <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'end'}}>
@@ -240,8 +301,15 @@ const MainContent = ({
                       value={option}
                       onChange={(e) => updateOption(index, e.target.value)}
                       maxLength={100}
+                      disabled={isEditing}
+                      style={{
+                        backgroundColor: isEditing ? '#f3f4f6' : 'white',
+                        cursor: isEditing ? 'not-allowed' : 'text',
+                        opacity: isEditing ? 0.7 : 1,
+                        color: isEditing ? '#6b7280' : '#111827'
+                      }}
                     />
-                    {options.length > 2 && (
+                    {options.length > 2 && !isEditing && (
                       <button
                         onClick={() => removeOption(index)}
                         style={{
@@ -261,7 +329,8 @@ const MainContent = ({
                   </div>
                 ))}
               </div>
-              {options.length < 10 && (
+              
+              {!isEditing && options.length < 10 && (
                 <button
                   onClick={addOption}
                   style={{
@@ -278,15 +347,16 @@ const MainContent = ({
                   + Add Option
                 </button>
               )}
+              
               {options.length < 2 && (
                 <p style={{color: '#ef4444', fontSize: '0.875rem', marginTop: '0.5rem'}}>
-                  ⚠️ Poll needs at least 2 options
+                  Poll needs at least 2 options
                 </p>
               )}
             </div>
           </div>
 
-          {/* ✅ YOUR EXISTING ANONYMITY SECTION */}
+          {/* Anonymity Section */}
           <div className="config-section-card">
             <h2>Anonymity</h2>
             <div className="config-section-content">
@@ -319,7 +389,7 @@ const MainContent = ({
             </div>
           </div>
 
-          {/* ✅ YOUR EXISTING VISIBILITY + PRIVATE ACCESS - EXACT SAME */}
+          {/* Visibility Section */}
           <div className="config-section-card">
             <h2>Visibility</h2>
             <div className="config-section-content">
@@ -330,6 +400,7 @@ const MainContent = ({
                   value="public"
                   checked={configData.visibility === "public"}
                   onChange={(e) => handleChange("visibility", e.target.value)}
+                  disabled={isEditing}
                 />
                 <div className="config-radio-text">
                   <h3>Public</h3>
@@ -343,6 +414,7 @@ const MainContent = ({
                   value="private"
                   checked={configData.visibility === "private"}
                   onChange={(e) => handleChange("visibility", e.target.value)}
+                  disabled={isEditing}
                 />
                 <div className="config-radio-text">
                   <h3>Private</h3>
@@ -352,10 +424,42 @@ const MainContent = ({
             </div>
           </div>
 
+          {/* Private Access Settings */}
           {configData.visibility === "private" && (
             <div className="config-section-card">
               <h2>Allowed Access</h2>
-              <div className="config-section-content">
+              
+              {isEditing && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#fef3c7',
+                  border: '1px solid #fbbf24',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem',
+                  fontSize: '0.875rem',
+                  color: '#92400e',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <strong>Access control settings cannot be changed after poll creation</strong>
+                </div>
+              )}
+              
+              <div 
+                className="config-section-content"
+                style={{
+                  opacity: isEditing ? 0.6 : 1,
+                  pointerEvents: isEditing ? 'none' : 'auto',
+                  backgroundColor: isEditing ? '#f9fafb' : 'transparent',
+                  borderRadius: '0.5rem',
+                  padding: isEditing ? '1rem' : '0'
+                }}
+              >
                 <label className="config-form-label">Add Allowed Email</label>
                 <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
                   <input
@@ -385,7 +489,7 @@ const MainContent = ({
                     Add
                   </button>
                 </div>
-                {emailError && <p style={{ color: "#ef4444", fontSize: "0.8rem" }}>⚠️ Invalid email format</p>}
+                {emailError && <p style={{ color: "#ef4444", fontSize: "0.8rem" }}>Invalid email format</p>}
 
                 {configData.allowedVoters?.length > 0 && (
                   <div style={{ marginTop: "1rem", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
@@ -473,26 +577,73 @@ const MainContent = ({
                   </div>
                 </div>
               </div>
+              
+              {isEditing && (configData.allowedVoters.length > 0 || configData.allowedDomains.length > 0) && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#1e40af'
+                }}>
+                  <strong>Current Access List:</strong> {configData.allowedVoters.length} allowed voter(s)
+                  {configData.allowedDomains.length > 0 && `, ${configData.allowedDomains.length} allowed domain(s)`}
+                </div>
+              )}
             </div>
           )}
         </>
       )}
 
-      {/* VOTING RULES TAB */}
+      {/* Voting Rules Tab */}
       {activeTab === "Voting Rules" && (
         <div className="config-section-card">
           <h2>Selection Rules</h2>
+          
+          {isEditing && (
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#fef3c7',
+              border: '1px solid #fbbf24',
+              borderRadius: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '0.875rem',
+              color: '#92400e',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <strong>Voting type cannot be changed after poll creation</strong>
+            </div>
+          )}
+          
           <div className="config-section-content">
-            <label className="config-radio-option">
+            <label 
+              className="config-radio-option"
+              style={{
+                opacity: isEditing ? 0.6 : 1,
+                cursor: isEditing ? 'not-allowed' : 'pointer',
+                backgroundColor: isEditing ? '#f9fafb' : 'white'
+              }}
+            >
               <input
                 type="radio"
                 name="votingType"
                 checked={configData.selectionLimit === 1 && configData.minSelectionLimit === 1}
                 onChange={() => {
-                  handleChange("minSelectionLimit", 1);
-                  handleChange("selectionLimit", 1);
-                  handleChange("ismultiplechoice", false);
+                  if (!isEditing) {
+                    handleChange("minSelectionLimit", 1);
+                    handleChange("selectionLimit", 1);
+                    handleChange("ismultiplechoice", false);
+                  }
                 }}
+                disabled={isEditing}
               />
               <div className="config-radio-text">
                 <h3>Single Choice</h3>
@@ -500,22 +651,46 @@ const MainContent = ({
               </div>
             </label>
 
-            <label className="config-radio-option">
+            <label 
+              className="config-radio-option"
+              style={{
+                opacity: isEditing ? 0.6 : 1,
+                cursor: isEditing ? 'not-allowed' : 'pointer',
+                backgroundColor: isEditing ? '#f9fafb' : 'white'
+              }}
+            >
               <input
                 type="radio"
                 name="votingType"
                 checked={configData.selectionLimit > 1}
                 onChange={() => {
-                  handleChange("minSelectionLimit", 1);
-                  handleChange("selectionLimit", 2);
-                  handleChange("ismultiplechoice", true);
+                  if (!isEditing) {
+                    handleChange("minSelectionLimit", 1);
+                    handleChange("selectionLimit", 2);
+                    handleChange("ismultiplechoice", true);
+                  }
                 }}
+                disabled={isEditing}
               />
               <div className="config-radio-text">
                 <h3>Multiple Choice</h3>
                 <p>Voters can choose more than one option.</p>
               </div>
             </label>
+            
+            {isEditing && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem 1rem',
+                backgroundColor: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                color: '#1e40af'
+              }}>
+                <strong>Current Setting:</strong> {configData.ismultiplechoice ? 'Multiple Choice' : 'Single Choice'}
+              </div>
+            )}
           </div>
         </div>
       )}

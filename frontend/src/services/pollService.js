@@ -262,6 +262,62 @@ class PollService {
       setTimeout(() => resolve(false), 5000);
     });
   }
+/**
+ * Submit a vote (single or multiple choice)
+ * @param {string} pollId - Poll ID
+ * @param {number|string|array} optionId - Single option ID or array of IDs
+ * @returns {Promise<Object>} Vote result
+ */
+async vote(pollId, optionIdOrArray) {
+  try {
+    console.log('🗳️ Submitting vote for poll:', pollId, 'option(s):', optionIdOrArray);
+    
+    // Ensure it's always an array (backend expects optionId as array)
+    const optionIds = Array.isArray(optionIdOrArray) 
+      ? optionIdOrArray 
+      : [optionIdOrArray];
+
+    if (!optionIds || optionIds.length === 0) {
+      throw new Error('No option selected');
+    }
+
+    const token = localStorage.getItem('token');
+    
+    const response = await API.post(`/polls/${pollId}/vote`, {
+      optionId: optionIds  // Send as array for multiple choice support
+    }, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('✅ Vote successful:', response.data);
+    
+    return {
+      success: true,
+      data: response.data,
+      message: response.data.message || 'Vote recorded successfully!'
+    };
+
+  } catch (err) {
+    console.error('❌ Vote error:', err);
+    
+    let errorMessage = 'Failed to submit vote';
+    if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+
+    return {
+      success: false,
+      message: errorMessage
+    };
+  }
+}
+
+  
 }
 
 // Export as singleton
