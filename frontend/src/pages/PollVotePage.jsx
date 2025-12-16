@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import voteService from '../services/voteService1';
 import '../styles/pollVoting.css';
 
 const PollVotingPage = () => {
@@ -13,12 +14,15 @@ const PollVotingPage = () => {
   const [hasVoted, setHasVoted] = useState(false);
   const [error, setError] = useState(null);
   const [pollClosed, setPollClosed] = useState(false);
+  const [theme, setTheme] = useState(null);
 
-  // ✅ GET POLL ID FROM URL
+  // ✅ GET POLL ID FROM URL AND LOAD DATA
   useEffect(() => {
     const loadPollData = async () => {
       try {
         setIsLoading(true);
+
+        // Extract poll ID from URL
         const pathParts = window.location.pathname.split('/');
         const pollIdFromUrl = pathParts[pathParts.length - 1];
 
@@ -28,50 +32,49 @@ const PollVotingPage = () => {
           return;
         }
 
-        console.log('📥 Loading poll:', pollIdFromUrl);
+        console.log('========================================');
+        console.log('📥 LOADING POLL FOR VOTING');
+        console.log('========================================');
 
-        // Fetch poll data from API
-        const response = await fetch(`/api/polls/${pollIdFromUrl}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Poll not found');
-          } else {
-            setError('Failed to load poll');
-          }
+        // Fetch poll using service
+        const result = await voteService.getPoll(pollIdFromUrl);
+
+        if (!result.success) {
+          setError(result.error);
           setIsLoading(false);
           return;
         }
 
-        const data = await response.json();
-        const pollData = data.poll || data;
+        const pollData = result.poll;
 
-        // Extract poll options
-        let pollOptions = [];
-        if (pollData.options && Array.isArray(pollData.options)) {
-          pollOptions = pollData.options;
-        } else if (pollData.poll_options && Array.isArray(pollData.poll_options)) {
-          pollOptions = pollData.poll_options.map((opt, idx) => ({
-            id: opt.id || idx + 1,
-            text: opt.option_text || opt.text || opt,
-            votes: opt.vote_count || 0
-          }));
-        }
+        // Format options using service
+        const formattedOptions = voteService.formatOptions(pollData);
 
-        if (!pollOptions || pollOptions.length === 0) {
+        if (!formattedOptions || formattedOptions.length === 0) {
           setError('Poll has no options');
           setIsLoading(false);
           return;
         }
 
-        // Check if poll is closed
-        const closeDate = new Date(pollData.end_time || pollData.closeDate);
-        if (new Date() > closeDate) {
-          setPollClosed(true);
-        }
+        // Check if poll is closed using service
+        const isClosed = voteService.isPollClosed(pollData);
+
+        // Get theme settings using service
+        const themeSettings = voteService.getThemeSettings(pollData);
 
         setPoll(pollData);
-        setOptions(pollOptions);
+        setOptions(formattedOptions);
+        setPollClosed(isClosed);
+        setTheme(themeSettings);
+
+        console.log('📊 Poll loaded successfully:', {
+          id: pollData.id,
+          title: pollData.title,
+          options: formattedOptions.length,
+          closed: isClosed,
+          theme: themeSettings
+        });
+
         setIsLoading(false);
       } catch (err) {
         console.error('❌ Error loading poll:', err);
@@ -85,7 +88,7 @@ const PollVotingPage = () => {
 
   // ✅ HANDLE OPTION SELECTION
   const handleOptionChange = (optionId) => {
-    console.log('🔘 Selected:', optionId, 'Multiple:', poll?.allow_multiple_choices);
+    console.log('🔘 Selected option:', optionId);
 
     if (poll?.allow_multiple_choices) {
       setSelectedOptions(prev => {
@@ -105,7 +108,8 @@ const PollVotingPage = () => {
 
   // ✅ SUBMIT VOTE
   const handleSubmitVote = async () => {
-    const pollIdFromUrl = window.location.pathname.split('/').pop();
+    const pathParts = window.location.pathname.split('/');
+    const pollIdFromUrl = pathParts[pathParts.length - 1];
     const optionsToSubmit = poll?.allow_multiple_choices ? selectedOptions : selectedOption;
 
     if (!optionsToSubmit || (Array.isArray(optionsToSubmit) && optionsToSubmit.length === 0)) {
@@ -118,37 +122,23 @@ const PollVotingPage = () => {
     try {
       console.log('🗳️ Submitting vote:', optionsToSubmit);
 
-      const response = await fetch(`/api/polls/${pollIdFromUrl}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: JSON.stringify({
-          optionId: optionsToSubmit
-        })
-      });
+      // Use service to submit vote
+      const result = await voteService.submitVote(pollIdFromUrl, optionsToSubmit);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 403) {
+      if (!result.success) {
+        if (result.statusCode === 403) {
+          // Already voted
           setHasVoted(true);
-          alert(data.message || 'You have already voted on this poll');
-        } else {
-          alert(data.message || 'Failed to submit vote');
         }
+        alert(result.message || result.error);
         setIsVoting(false);
         return;
       }
 
-      // ✅ SUCCESS - Show message and disable voting
+      // ✅ SUCCESS
       setHasVoted(true);
-      alert('Thank you! Your vote has been recorded');
-      console.log('✅ Vote successful:', data);
-    } catch (err) {
-      console.error('❌ Vote error:', err);
-      alert('An error occurred while submitting your vote');
+      alert('Thank you! Your vote has been recorded successfully');
+      console.log('✅ Vote successful:', result.data);
     } finally {
       setIsVoting(false);
     }
@@ -188,7 +178,7 @@ const PollVotingPage = () => {
   }
 
   // ✅ POLL NOT LOADED
-  if (!poll) {
+  if (!poll || !theme) {
     return (
       <div className="loading-container">
         <div className="loading-card">
@@ -199,25 +189,23 @@ const PollVotingPage = () => {
     );
   }
 
-  // ✅ FORMAT DATE
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  // ✅ GET FONT FAMILY FROM THEME
+  const getFontFamily = () => {
+    if (theme.fontStyle === 'roboto') return "'Roboto', sans-serif";
+    if (theme.fontStyle === 'poppins') return "'Poppins', sans-serif";
+    if (theme.fontStyle === 'playfair') return "'Playfair Display', serif";
+    return "'Inter', sans-serif";
   };
 
   return (
-    <div className="voting-page-container">
+    <div 
+      className="voting-page-container"
+      style={{ fontFamily: getFontFamily() }}
+    >
       <div className="voting-wrapper">
         {/* ✅ POLL HEADER */}
-        <div className="voting-header">
-          <h1 className="voting-title" style={{ color: poll.theme_settings?.primaryColor || '#137fec' }}>
+        <div className="voting-header" style={{ borderLeftColor: theme.primaryColor }}>
+          <h1 className="voting-title" style={{ color: theme.primaryColor }}>
             {poll.title}
           </h1>
           {poll.description && (
@@ -225,18 +213,27 @@ const PollVotingPage = () => {
           )}
 
           {/* ✅ POLL INFO STATS */}
-          <div className="voting-info-box">
+          <div 
+            className="voting-info-box"
+            style={{ 
+              backgroundColor: `${theme.primaryColor}10`,
+              borderColor: `${theme.primaryColor}30`
+            }}
+          >
             <div className="voting-info-content">
               <div className="voting-info-item">
-                <strong>Poll ID:</strong> {poll.id}
+                <strong style={{ color: theme.primaryColor }}>Poll ID:</strong> {poll.id}
               </div>
               <div className="voting-info-item">
-                <strong>Options:</strong> {options.length}
+                <strong style={{ color: theme.primaryColor }}>Options:</strong> {options.length}
               </div>
               <div className="voting-info-item">
-                <strong>Type:</strong>
-                <span className={`voting-type-badge ${poll.allow_multiple_choices ? 'voting-type-multiple' : 'voting-type-single'}`}>
-                  {poll.allow_multiple_choices ? '☑️ Multiple' : '🔘 Single'}
+                <strong style={{ color: theme.primaryColor }}>Type:</strong>
+                <span 
+                  className="voting-type-badge"
+                  style={{ backgroundColor: theme.primaryColor }}
+                >
+                  {poll.allow_multiple_choices ? '☑️ Multiple Choice' : '🔘 Single Choice'}
                 </span>
               </div>
             </div>
@@ -249,7 +246,7 @@ const PollVotingPage = () => {
             <AlertCircle className="alert-icon" />
             <div>
               <span className="alert-title">Poll Closed</span>
-              <span className="alert-closed-text"> - Voting is no longer available for this poll</span>
+              <span className="alert-closed-text"> - Voting is no longer available</span>
             </div>
           </div>
         )}
@@ -282,15 +279,24 @@ const PollVotingPage = () => {
                   key={optionId}
                   className={`voting-option ${isSelected ? 'selected' : ''} ${hasVoted || pollClosed ? 'disabled' : ''}`}
                   onClick={() => !hasVoted && !pollClosed && handleOptionChange(optionId)}
+                  style={isSelected ? {
+                    borderColor: theme.primaryColor,
+                    backgroundColor: `${theme.primaryColor}15`,
+                    boxShadow: `0 0 0 3px ${theme.primaryColor}20`
+                  } : {}}
                 >
                   <input
                     type={poll.allow_multiple_choices ? 'checkbox' : 'radio'}
                     checked={isSelected}
                     onChange={() => {}}
                     disabled={hasVoted || pollClosed}
+                    style={{ accentColor: theme.primaryColor }}
                   />
-                  <span className="voting-option-label">
-                    {typeof option === 'string' ? option : option.text}
+                  <span 
+                    className="voting-option-label"
+                    style={isSelected ? { color: theme.primaryColor } : {}}
+                  >
+                    {option.text}
                   </span>
                 </label>
               );
@@ -302,28 +308,37 @@ const PollVotingPage = () => {
             onClick={handleSubmitVote}
             disabled={hasVoted || pollClosed || isVoting}
             className="voting-submit-btn"
+            style={{ 
+              backgroundColor: hasVoted || pollClosed ? '#d1d5db' : theme.primaryColor
+            }}
           >
             {isVoting ? '⏳ Submitting...' : hasVoted ? '✅ Already Voted' : pollClosed ? '❌ Poll Closed' : 'Submit Vote'}
           </button>
         </div>
 
         {/* ✅ SCHEDULE INFO - BOTTOM */}
-        <div className="schedule-section">
+        <div 
+          className="schedule-section"
+          style={{ borderTopColor: theme.primaryColor }}
+        >
           <div className="schedule-header">
-            <Clock className="schedule-icon" />
+            <Clock 
+              className="schedule-icon"
+              style={{ color: theme.primaryColor }}
+            />
             <div className="schedule-content">
               <h3 className="schedule-title">Poll Schedule</h3>
               <div className="schedule-dates">
                 <div className="schedule-date-item">
                   <p className="schedule-date-label">Starts:</p>
                   <p className="schedule-date-value">
-                    {formatDate(poll.start_time || poll.start_date || poll.startDate)}
+                    {voteService.formatDate(poll.start_time || poll.start_date || poll.startDate)}
                   </p>
                 </div>
                 <div className="schedule-date-item">
                   <p className="schedule-date-label">Closes:</p>
                   <p className="schedule-date-value">
-                    {formatDate(poll.end_time || poll.end_date || poll.closeDate)}
+                    {voteService.formatDate(poll.end_time || poll.end_date || poll.closeDate)}
                   </p>
                 </div>
               </div>

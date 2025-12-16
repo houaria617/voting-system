@@ -1,5 +1,5 @@
 /* ========================================
-   POLL VOTING PAGE STYLES
+   POLL VOTING PAGE - SCOPED STYLES ONLY
    ======================================== */
 
 .voting-page-container {
@@ -64,11 +64,13 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .access-denied-btn:hover {
-  background-color: #0d5dc9;
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* ========================================
@@ -102,113 +104,110 @@
 }
 
 /* ========================================
-   HEADER SECTION
+   VOTING PAGE HEADER
    ======================================== */
 
-.voting-header {
+.voting-page-container .voting-header {
   background-color: white;
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid;
+  border-left-color: inherit;
 }
 
-.voting-title {
+.voting-page-container .voting-title {
   font-size: 2rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: inherit;
 }
 
-.voting-description {
+.voting-page-container .voting-description {
   color: #6b7280;
   margin-bottom: 1.5rem;
   font-size: 1rem;
+  line-height: 1.6;
 }
 
-.voting-info-box {
-  background-color: #f0f7ff;
+.voting-page-container .voting-info-box {
+  background-color: rgba(19, 127, 236, 0.05);
   border-radius: 0.5rem;
   padding: 1rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(19, 127, 236, 0.2);
 }
 
-.voting-info-content {
+.voting-page-container .voting-info-content {
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
   font-size: 0.875rem;
-  color: #1e40af;
+  color: #1f2937;
 }
 
-.voting-info-item {
-  display: flex;
-  gap: 0.5rem;
+.voting-page-container .voting-info-item strong {
+  font-weight: 600;
+  color: inherit;
 }
 
-.voting-type-badge {
+.voting-page-container .voting-type-badge {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 0.25rem;
   font-weight: 600;
   margin-left: 0.25rem;
-}
-
-.voting-type-single {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.voting-type-multiple {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: inherit;
+  color: white;
 }
 
 /* ========================================
    ALERT MESSAGES
    ======================================== */
 
-.alert-message {
+.voting-page-container .alert-message {
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 2rem;
   display: flex;
   gap: 0.75rem;
-  align-items: center;
+  align-items: flex-start;
 }
 
-.alert-icon {
+.voting-page-container .alert-icon {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
+  margin-top: 0.125rem;
 }
 
-.alert-closed {
+.voting-page-container .alert-closed {
   background-color: #fee2e2;
   border: 1px solid #fecaca;
 }
 
-.alert-closed .alert-icon {
+.voting-page-container .alert-closed .alert-icon {
   color: #dc2626;
 }
 
-.alert-closed-text {
+.voting-page-container .alert-closed-text {
   color: #991b1b;
 }
 
-.alert-voted {
+.voting-page-container .alert-voted {
   background-color: #dcfce7;
   border: 1px solid #86efac;
 }
 
-.alert-voted .alert-icon {
+.voting-page-container .alert-voted .alert-icon {
   color: #16a34a;
 }
 
-.alert-voted-text {
+.voting-page-container .alert-voted-text {
   color: #166534;
 }
 
-.alert-title {
+.voting-page-container .alert-title {
   font-weight: bold;
 }
 
@@ -216,7 +215,7 @@
    VOTING CARD
    ======================================== */
 
-.voting-card {
+.voting-page-container .voting-card {
   background-color: white;
   border-radius: 12px;
   padding: 2rem;
@@ -224,21 +223,32 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.voting-card-title {
+.voting-page-container .voting-card-title {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 1.5rem;
   color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.voting-options-container {
+.voting-page-container .voting-card-title::before {
+  content: '';
+  width: 4px;
+  height: 24px;
+  background-color: inherit;
+  border-radius: 2px;
+}
+
+.voting-page-container .voting-options-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.voting-option {
+.voting-page-container .voting-option {
   display: flex;
   align-items: center;
   padding: 1rem;
@@ -246,130 +256,144 @@
   border-radius: 0.5rem;
   cursor: pointer;
   background-color: white;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
-.voting-option:hover:not(:disabled) {
-  border-color: #137fec;
-  background-color: #f0f7ff;
+.voting-page-container .voting-option:hover:not(:disabled) {
+  border-color: inherit;
+  background-color: rgba(19, 127, 236, 0.05);
+  transform: translateX(4px);
 }
 
-.voting-option.selected {
-  border-color: #137fec;
-  background-color: #f0f7ff;
+.voting-page-container .voting-option.selected {
+  border-color: inherit;
+  background-color: rgba(19, 127, 236, 0.1);
+  box-shadow: 0 0 0 3px rgba(19, 127, 236, 0.15);
 }
 
-.voting-option:disabled {
+.voting-page-container .voting-option:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-.voting-option input {
+.voting-page-container .voting-option input {
   width: 20px;
   height: 20px;
   cursor: pointer;
   margin-right: 1rem;
-  accent-color: #137fec;
+  accent-color: inherit;
+  flex-shrink: 0;
 }
 
-.voting-option input:disabled {
+.voting-page-container .voting-option input:disabled {
   cursor: not-allowed;
 }
 
-.voting-option-label {
+.voting-page-container .voting-option-label {
   font-size: 1rem;
   color: #1f2937;
   font-weight: 400;
 }
 
-.voting-option.selected .voting-option-label {
+.voting-page-container .voting-option.selected .voting-option-label {
   font-weight: 600;
+  color: inherit;
 }
 
-.voting-submit-btn {
+.voting-page-container .voting-submit-btn {
   width: 100%;
-  padding: 0.75rem 1.5rem;
-  background-color: #137fec;
+  padding: 0.875rem 1.5rem;
+  background-color: inherit;
   color: white;
   border: none;
   border-radius: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.voting-submit-btn:hover:not(:disabled) {
-  background-color: #0d5dc9;
+.voting-page-container .voting-submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(19, 127, 236, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.voting-submit-btn:disabled {
+.voting-page-container .voting-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.voting-page-container .voting-submit-btn:disabled {
   background-color: #d1d5db;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* ========================================
-   SCHEDULE INFO SECTION (BOTTOM)
+   SCHEDULE SECTION (BOTTOM)
    ======================================== */
 
-.schedule-section {
+.voting-page-container .schedule-section {
   background-color: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  border-top: 3px solid;
+  border-top-color: inherit;
 }
 
-.schedule-header {
+.voting-page-container .schedule-header {
   display: flex;
   gap: 1rem;
   align-items: flex-start;
   margin-bottom: 1rem;
 }
 
-.schedule-icon {
-  color: #6b7280;
+.voting-page-container .schedule-icon {
+  color: inherit;
   width: 20px;
   height: 20px;
   margin-top: 0.25rem;
   flex-shrink: 0;
 }
 
-.schedule-content {
+.voting-page-container .schedule-content {
   flex: 1;
 }
 
-.schedule-title {
+.voting-page-container .schedule-title {
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 0.5rem;
 }
 
-.schedule-dates {
+.voting-page-container .schedule-dates {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   font-size: 0.875rem;
 }
 
-.schedule-date-item {
+.voting-page-container .schedule-date-item {
   display: flex;
   flex-direction: column;
 }
 
-.schedule-date-label {
+.voting-page-container .schedule-date-label {
   color: #6b7280;
   margin-bottom: 0.25rem;
-}
-
-.schedule-date-value {
-  color: #1f2937;
   font-weight: 500;
 }
 
-.schedule-closed-message {
+.voting-page-container .schedule-date-value {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.voting-page-container .schedule-closed-message {
   border-top: 1px solid #e5e7eb;
   padding-top: 1rem;
   color: #dc2626;
@@ -387,26 +411,26 @@
     padding: 1rem 0.5rem;
   }
 
-  .voting-header,
-  .voting-card,
-  .schedule-section {
+  .voting-page-container .voting-header,
+  .voting-page-container .voting-card,
+  .voting-page-container .schedule-section {
     padding: 1.5rem 1rem;
   }
 
-  .voting-title {
+  .voting-page-container .voting-title {
     font-size: 1.5rem;
   }
 
-  .voting-info-content {
+  .voting-page-container .voting-info-content {
     flex-direction: column;
     gap: 1rem;
   }
 
-  .schedule-dates {
+  .voting-page-container .schedule-dates {
     grid-template-columns: 1fr;
   }
 
-  .access-denied-card {
-    padding: 2rem 1rem;
+  .voting-page-container .voting-card-title::before {
+    display: none;
   }
 }

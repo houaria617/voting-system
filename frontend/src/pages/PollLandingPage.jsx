@@ -12,14 +12,46 @@ const PollLandingPage = () => {
   const { pollId } = useParams();
   const { state } = useLocation();
   
-  // ✅ ALL STATE HOOKS FIRST (React rule)
   const [poll, setPoll] = useState(null);
   const [options, setOptions] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null);   // Single choice
-  const [selectedOptions, setSelectedOptions] = useState([]);   // Multiple choice
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ useEffect FIRST
+  // ✅ Extract theme from poll
+  const getThemeStyles = () => {
+    if (!poll?.theme_settings) {
+      return {
+        backgroundColor: '#f9fafb',
+        primaryColor: '#137fec',
+        secondaryColor: '#ffffff',
+        textColor: '#111827',
+        cardBackground: '#ffffff',
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+        backgroundImage: null,
+        logo: null
+      };
+    }
+
+    const theme = poll.theme_settings;
+    
+    return {
+      backgroundColor: theme.backgroundColor || '#f9fafb',
+      primaryColor: theme.primaryColor || '#137fec',
+      secondaryColor: theme.secondaryColor || '#ffffff',
+      textColor: theme.textColor || '#111827',
+      cardBackground: theme.cardBackground || '#ffffff',
+      fontFamily: theme.fontStyle === 'roboto' ? 'Roboto, sans-serif' :
+                   theme.fontStyle === 'poppins' ? 'Poppins, sans-serif' :
+                   theme.fontStyle === 'playfair' ? 'Playfair Display, serif' :
+                   'Inter, system-ui, sans-serif',
+      backgroundImage: theme.backgroundImage || null,
+      logo: theme.logo || null
+    };
+  };
+
+  const theme = getThemeStyles();
+
   useEffect(() => {
     const loadPollData = async () => {
       try {
@@ -103,7 +135,6 @@ const PollLandingPage = () => {
     loadPollData();
   }, [pollId, state, navigate]);
 
-  // ✅ formattedPollData BEFORE handleOptionChange
   const formattedPollData = poll && options ? {
     question: poll.title,
     description: poll.description || '',
@@ -124,46 +155,41 @@ const PollLandingPage = () => {
     }
   } : { question: '', description: '', options: [], theme: {}, schedule: {}, settings: {} };
 
-  // ✅ handleOptionChange AFTER formattedPollData
   const handleOptionChange = (optionId, isMultipleChoice) => {
-  console.log('🔘 Clicked:', optionId, 'Multiple:', isMultipleChoice);
-  
-  if (isMultipleChoice) {
-    setSelectedOptions(prev => {
-      if (prev.includes(optionId)) {
-        return prev.filter(id => id !== optionId);  // ✅ UNCHECK 2nd click
-      }
-      return [...prev, optionId];  // ✅ CHECK 1st click
-    });
-  } else {
-    if (selectedOption === optionId) {
-      setSelectedOption(null);  // ✅ UNCHECK single
+    console.log('🔘 Clicked:', optionId, 'Multiple:', isMultipleChoice);
+    
+    if (isMultipleChoice) {
+      setSelectedOptions(prev => {
+        if (prev.includes(optionId)) {
+          return prev.filter(id => id !== optionId);
+        }
+        return [...prev, optionId];
+      });
     } else {
-      setSelectedOption(optionId);
+      if (selectedOption === optionId) {
+        setSelectedOption(null);
+      } else {
+        setSelectedOption(optionId);
+      }
     }
-  }
-};
-
+  };
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
   };
 
-const handleEditPoll = () => {
-  if (!poll) return;
-  
-  console.log('📝 [EDIT] Starting edit for poll:', poll.id);
-  console.log('📝 [EDIT] Poll title:', poll.title);
-  
-  // ✅ CORRECT: Navigate to /configure-poll/:pollId with pollId in URL
-  // This makes ConfigurePollPage load ALL data from API (CASE 1 in useEffect)
-  navigate(`/configure-poll/${poll.id}`, {
-    state: {
-      isEditing: true
-      // ❌ DO NOT pass pollData - let API load everything!
-    }
-  });
-};
+  const handleEditPoll = () => {
+    if (!poll) return;
+    
+    console.log('📝 [EDIT] Starting edit for poll:', poll.id);
+    console.log('📝 [EDIT] Poll title:', poll.title);
+    
+    navigate(`/configure-poll/${poll.id}`, {
+      state: {
+        isEditing: true
+      }
+    });
+  };
 
   const handleSharePoll = () => {
     if (!poll) return;
@@ -172,11 +198,13 @@ const handleEditPoll = () => {
     });
   };
 
-  // ✅ Loading state
   if (isLoading) {
     return (
-      <div className="poll-landing-page">
-        <PageHeader onBackToDashboard={handleBackToDashboard} />
+      <div className="poll-landing-page" style={{ 
+        backgroundColor: theme.backgroundColor,
+        fontFamily: theme.fontFamily 
+      }}>
+        <PageHeader onBackToDashboard={handleBackToDashboard} logoUrl={theme.logo} />
         <main className="poll-landing-main">
           <div className="poll-landing-container">
             <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
@@ -192,7 +220,7 @@ const handleEditPoll = () => {
   if (!poll) {
     return (
       <div className="poll-landing-page">
-        <PageHeader onBackToDashboard={handleBackToDashboard} />
+        <PageHeader onBackToDashboard={handleBackToDashboard} logoUrl={theme.logo} />
         <main className="poll-landing-main">
           <div className="poll-landing-container">
             <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
@@ -202,7 +230,7 @@ const handleEditPoll = () => {
                 onClick={handleBackToDashboard}
                 style={{
                   marginTop: '1rem', padding: '0.75rem 1.5rem',
-                  backgroundColor: '#137fec', color: 'white',
+                  backgroundColor: theme.primaryColor, color: 'white',
                   border: 'none', borderRadius: '0.5rem', cursor: 'pointer'
                 }}
               >
@@ -215,15 +243,6 @@ const handleEditPoll = () => {
     );
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not set';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-  };
-
   console.log('✅ Rendering with:', {
     options: formattedPollData.options.length,
     allowMultiple: formattedPollData.settings.allowMultiple,
@@ -231,20 +250,38 @@ const handleEditPoll = () => {
   });
 
   return (
-    <div className="poll-landing-page">
-      <PageHeader onBackToDashboard={handleBackToDashboard} />
+    <div 
+      className="poll-landing-page" 
+      style={{ 
+        backgroundColor: theme.backgroundColor,
+        fontFamily: theme.fontFamily,
+        minHeight: '100vh'
+      }}
+    >
+      <PageHeader 
+        onBackToDashboard={handleBackToDashboard} 
+        logoUrl={theme.logo}
+      />
+      
       <main className="poll-landing-main">
         <div className="poll-landing-container">
+          {/* Page Intro */}
           <div className="page-intro">
-            <h1 className="page-title">Poll Preview</h1>
-            <p className="page-subtitle">
+            <h1 className="page-title" style={{ color: theme.textColor }}>
+              Poll Preview
+            </h1>
+            <p className="page-subtitle" style={{ color: theme.textColor, opacity: 0.8 }}>
               This is how your poll will appear to participants.
             </p>
             
             <div style={{
-              marginTop: '1rem', padding: '1rem',
-              backgroundColor: '#f0fdf4', borderRadius: '0.5rem',
-              border: '1px solid #bbf7d0', fontSize: '0.875rem'
+              marginTop: '1rem', 
+              padding: '1rem',
+              backgroundColor: `${theme.primaryColor}15`,
+              borderRadius: '0.5rem',
+              border: `1px solid ${theme.primaryColor}40`,
+              fontSize: '0.875rem',
+              color: theme.textColor
             }}>
               <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <div><strong>Poll ID:</strong> {poll.id}</div>
@@ -255,7 +292,8 @@ const handleEditPoll = () => {
                     padding: '0.25rem 0.5rem',
                     backgroundColor: formattedPollData.settings.allowMultiple ? '#dbeafe' : '#fef3c7',
                     color: formattedPollData.settings.allowMultiple ? '#1e40af' : '#92400e',
-                    borderRadius: '0.25rem', fontWeight: 600
+                    borderRadius: '0.25rem', 
+                    fontWeight: 600
                   }}>
                     {formattedPollData.settings.allowMultiple ? '☑️ Multiple Choice' : '🔘 Single Choice'}
                   </span>
@@ -264,12 +302,54 @@ const handleEditPoll = () => {
             </div>
           </div>
 
+          {/* ✅ THEMED POLL CARD */}
           <div style={{
-            backgroundColor: formattedPollData.theme.backgroundColor || 'white',
-            backgroundImage: formattedPollData.theme.backgroundImage ? `url(${formattedPollData.theme.backgroundImage})` : 'none',
-            backgroundSize: 'cover', backgroundPosition: 'center',
-            borderRadius: '12px', padding: '2rem'
+            backgroundColor: theme.cardBackground,
+            backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            borderRadius: '12px',
+            padding: '2rem',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            border: `1px solid ${theme.primaryColor}20`
           }}>
+            {/* ✅ Pass theme via CSS variables */}
+            <style>
+              {`
+                .poll-question-card {
+                  --theme-primary: ${theme.primaryColor};
+                  --theme-text: ${theme.textColor};
+                  --theme-card-bg: ${theme.cardBackground};
+                }
+                
+                .question-title {
+                  color: ${theme.textColor} !important;
+                }
+                
+                .question-description {
+                  color: ${theme.textColor} !important;
+                  opacity: 0.8;
+                }
+                
+                .submit-button {
+                  background-color: ${theme.primaryColor} !important;
+                  color: ${theme.secondaryColor} !important;
+                }
+                
+                .submit-button:hover {
+                  opacity: 0.9;
+                }
+                
+                .radio-option input:checked + .radio-checkmark {
+                  border-color: ${theme.primaryColor} !important;
+                }
+                
+                .radio-option input:checked + .radio-checkmark::after {
+                  background-color: ${theme.primaryColor} !important;
+                }
+              `}
+            </style>
+            
             <PollQuestion
               question={formattedPollData.question}
               description={formattedPollData.description}
@@ -280,6 +360,25 @@ const handleEditPoll = () => {
             />
           </div>
 
+          {/* ✅ THEMED ACTIONS */}
+          <style>
+            {`
+              .action-button-primary {
+                background-color: ${theme.primaryColor} !important;
+                color: ${theme.secondaryColor} !important;
+              }
+              
+              .action-button-secondary {
+                border-color: ${theme.primaryColor} !important;
+                color: ${theme.primaryColor} !important;
+              }
+              
+              .action-button-secondary:hover {
+                background-color: ${theme.primaryColor}15 !important;
+              }
+            `}
+          </style>
+          
           <PollActions onEditPoll={handleEditPoll} onSharePoll={handleSharePoll} />
         </div>
       </main>
