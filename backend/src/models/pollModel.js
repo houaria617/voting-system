@@ -133,13 +133,16 @@ const deleteAllowedVoters = async (pollId) => {
 
 // 11. GET VOTE COUNT (For safety check before delete)
 const getVoteCount = async (pollId) => {
-    const { data, error } = await supabase
-        .from('votes')
-        .select('id', { count: 'exact' })
-        .eq('poll_id', pollId);
-
-    if (error) throw error;
-    return data ? data.length : 0;
+  try {
+    const result = await db.query(
+      'SELECT COUNT(*) as count FROM votes WHERE poll_id = $1',
+      [pollId]
+    );
+    return parseInt(result.rows[0].count);
+  } catch (error) {
+    console.error('Error getting vote count:', error);
+    return 0;
+  }
 };
 
 
