@@ -1,92 +1,66 @@
 const pollModel = require('../models/pollModel');
 const userModel = require('../models/userModel');
-const voteModel = require('../models/voteModel'); // <--- YOU WERE MISSING THIS
-const requestIp = require('request-ip');          // <--- AND THIS
-const crypto = require('crypto');                 // <--- AND THIS
+const voteModel = require('../models/voteModel');
 
-// Validation Helper
 const VALID_VISIBILITY = ['ALWAYS', 'AFTER_VOTE', 'CLOSED'];
+const VALID_STATUS = ['DRAFT', 'ACTIVE', 'CLOSED', 'PAUSED'];
 
-// =======================================================
-// 1. CREATE POLL - SIMPLE FIX (No JOIN, Manual Assembly)
-// =======================================================
+// 1. CREATE POLL
 const createPoll = async (req, res) => {
     try {
-         const { title, description, options, theme, settings, invitedEmails, schedule } = req.body;
+        const { title, description, options, theme, settings, invitedEmails, schedule, status } = req.body;
         const creatorId = req.user.id;
 
-        // A. Validation
+        // Validation - Relaxed for DRAFT
         if (!title || title.trim() === "") {
             return res.status(400).json({ message: "Title is required" });
         }
-        if (!options || !Array.isArray(options) || options.length < 2) {
-            return res.status(400).json({ message: "Poll must have at least 2 options" });
-        }
-
-        let visibility = settings?.visibility || 'ALWAYS';
-        if (!VALID_VISIBILITY.includes(visibility)) {
-            if (VALID_VISIBILITY.includes(visibility.toUpperCase())) {
-                visibility = visibility.toUpperCase();
-            } else {
-                return res.status(400).json({
-                    message: `Invalid visibility. Allowed: ${VALID_VISIBILITY.join(', ')}`
-                });
+        
+        // Strict Check only if NOT draft
+        if (status !== 'DRAFT') {
+            if (!options || !Array.isArray(options) || options.length < 2) {
+                return res.status(400).json({ message: "Active polls must have at least 2 options" });
+            }
+            if (!schedule?.startDate || !schedule?.closeDate) {
+                 return res.status(400).json({ message: "Active polls must have start and close dates" });
             }
         }
 
-        // B. Prepare Data
-        const accessType = settings?.accessType === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+        const visibility = (settings?.visibility && VALID_VISIBILITY.includes(settings.visibility)) 
+            ? settings.visibility 
+            : 'ALWAYS';
+            
+        const pollStatus = (status && VALID_STATUS.includes(status)) ? status : 'ACTIVE';
 
-        const finalThemeSettings = {
-            ...(theme || {}),
-            access_type: accessType
+        // Construct Poll Object
+        const newPollData = {
+            creator_id: creatorId,
+            title,
+            description,
+            theme_settings: { ...(theme || {}), access_type: settings?.accessType || 'PUBLIC' },
+            is_anonymous: settings?.isAnonymous || false,
+            start_time: schedule?.startDate ? new Date(schedule.startDate).toISOString() : null,
+            end_time: schedule?.closeDate ? new Date(schedule.closeDate).toISOString() : null,
+            results_visibility: visibility,
+            allow_multiple_choices: settings?.allowMultiple || false,
+            status: pollStatus
         };
 
-        const startTime = req.body.schedule?.startDate
-  ? new Date(req.body.schedule.startDate).toISOString()
-  : null;
-
-const endTime = req.body.schedule?.closeDate
-  ? new Date(req.body.schedule.closeDate).toISOString()
-  : null;
-
-const newPollData = {
-  creator_id: creatorId,
-  title,
-  description,
-  theme_settings: finalThemeSettings,
-  is_anonymous: settings?.isAnonymous || false,
-  start_time: schedule?.startDate || null,      // ✅ ADD THIS LINE
-    end_time: schedule?.closeDate || null,        // ✅ ADD THIS LINE
-  results_visibility: visibility,
-  allow_multiple_choices: settings?.allowMultiple || false,
-  status: 'ACTIVE'
-};
-
-        // C. Database Calls
-        console.log('📝 [CREATE] Creating poll with data:', newPollData);
         const createdPoll = await pollModel.createPoll(newPollData);
-        console.log('✅ [CREATE] Poll created with ID:', createdPoll.id);
 
-        const optionsData = options.map((opt, index) => ({
-            poll_id: createdPoll.id,
-            option_text: opt,
-            order_index: index
-        }));
-        
-        console.log('📝 [CREATE] Adding options:', optionsData);
-        const createdOptions = await pollModel.addPollOptions(optionsData);
-        console.log('✅ [CREATE] Options added successfully:', createdOptions);
+        // Add Options (if any exist)
+        let createdOptions = [];
+        if (options && Array.isArray(options) && options.length > 0) {
+            const optionsData = options.map((opt, index) => ({
+                poll_id: createdPoll.id,
+                option_text: opt,
+                order_index: index
+            }));
+            createdOptions = await pollModel.addPollOptions(optionsData);
+        }
 
-        // ✅ FIX: Manually assemble the response (no JOIN needed)
-        const pollResponse = {
-            ...createdPoll,
-            poll_options: createdOptions // ← Attach options directly
-        };
-
-        console.log('✅ [CREATE] Response poll with options:', JSON.stringify(pollResponse, null, 2));
-
-        if (accessType === 'PRIVATE' && invitedEmails && Array.isArray(invitedEmails)) {
+        // Add Allowed Emails
+        if (settings?.accessType === 'PRIVATE' && invitedEmails?.length > 0) {
             const validUserIds = [];
             for (const email of invitedEmails) {
                 const user = await userModel.findUserByEmail(email);
@@ -97,197 +71,144 @@ const newPollData = {
             }
         }
 
-        // ✅ Send the manually assembled poll
         res.status(201).json({
             message: "Poll created successfully",
-            poll: pollResponse,  // ← Has poll_options!
-            share: {
-                url: `http://localhost:5173/poll/${createdPoll.id}`,
-                mode: accessType
-            }
+            poll: { ...createdPoll, poll_options: createdOptions },
+            share: { url: `/poll/${createdPoll.id}` }
         });
 
     } catch (err) {
-        console.error("❌ Create Poll Error:", err);
+        console.error("Create Poll Error:", err);
         res.status(500).json({ message: "Server Error creating poll" });
     }
 };
 
-module.exports = createPoll;
-// =======================================================
-// 2. GET POLL (With Result Hiding Logic)
-// =======================================================
-// =======================================================
-// 2. GET POLL (With Result Hiding Logic) - FIXED
-// =======================================================
+// 2. GET POLL
 const getPoll = async (req, res) => {
     try {
         const { id } = req.params;
-
-        // 1. Fetch Poll
         const poll = await pollModel.getPollById(id);
         if (!poll) return res.status(404).json({ message: "Poll not found" });
 
-        console.log('📥 [GETPOLL] Poll from DB:', JSON.stringify(poll, null, 2));
-        console.log('📥 [GETPOLL] poll.poll_options:', poll.poll_options);
-
-        // 2. Identify User
         const userId = req.user ? req.user.id : null;
         const isCreator = userId === poll.creator_id;
 
-        // --- A. ACCESS PRIVACY CHECK ---
-        const privacy = poll.theme_settings?.access_type || 'PUBLIC';
-        if (privacy === 'PRIVATE') {
-            if (!userId) return res.status(403).json({ message: "Private Poll. Login required." });
-
-            if (!isCreator) {
-                const isAllowed = await pollModel.isUserAllowed(poll.id, userId);
-                if (!isAllowed) return res.status(403).json({ message: "Access Denied." });
-            }
+        // Block drafts from public view
+        if (poll.status === 'DRAFT' && !isCreator) {
+            return res.status(403).json({ message: "This poll is not yet published." });
         }
 
-        // --- B. RESULT VISIBILITY CHECK ---
+        // Simple vote check
         let hasVoted = false;
+        if (userId) hasVoted = await voteModel.hasUserVoted(poll.id, userId);
 
-        if (userId) {
-            // Check by User ID
-            hasVoted = await voteModel.hasUserVoted(poll.id, userId);
-        } else {
-            // Check by IP Hash (for guests)
-            const clientIp = requestIp.getClientIp(req);
-            const ipHash = crypto.createHash('sha256').update(clientIp || 'unknown').digest('hex');
-            hasVoted = await voteModel.hasIpVoted(poll.id, ipHash);
-        }
-
-        // Decision Logic
-        let showResults = false;
-
-        if (isCreator) {
-            showResults = true;
-        } else if (poll.results_visibility === 'ALWAYS') {
-            showResults = true;
-        } else if (poll.results_visibility === 'CLOSED') {
-            showResults = false;
-        } else if (poll.results_visibility === 'AFTER_VOTE') {
-            showResults = hasVoted;
-        }
-
-        // --- C. SANITIZE DATA (FIXED) ---
-        // ✅ FIX: Check if poll_options exists before mapping
-        if (poll.poll_options && Array.isArray(poll.poll_options)) {
-            if (!showResults) {
-                poll.poll_options = poll.poll_options.map(opt => {
-                    const { vote_count_cache, ...safeOption } = opt; // Remove count
-                    return safeOption;
-                });
-            }
-        } else {
-            // ✅ If no options, set to empty array
-            poll.poll_options = [];
-        }
-
-        console.log('📤 [GETPOLL] Sending response with poll_options:', poll.poll_options);
-
-        res.json({
-            ...poll,
-            user_has_voted: hasVoted
-        });
-
+        res.json({ ...poll, user_has_voted: hasVoted });
     } catch (err) {
         console.error("Get Poll Error:", err);
         res.status(500).json({ message: "Server Error" });
     }
 };
 
-module.exports = getPoll;
-// =======================================================
-// 3. GET USER DASHBOARD (My Polls + Search)
-// =======================================================
-const getDashboard = async (req, res) => {
-    try {
-        const userId = req.user.id; // From Middleware
-        const { search } = req.query; // Get ?search=... from URL
-
-        const polls = await pollModel.getUserPolls(userId, search);
-
-        res.json({
-            count: polls.length,
-            polls: polls
-        });
-
-    } catch (err) {
-        console.error("Dashboard Error:", err);
-        res.status(500).json({ message: "Server Error fetching dashboard" });
-    }
-};
-// =======================================================
-// 4. EDIT POLL
-// =======================================================
+// 3. EDIT POLL
 const editPoll = async (req, res) => {
     try {
-        const { id } = req.params; // Poll ID
+        const { id } = req.params;
         const { title, description, theme, settings, schedule, status } = req.body;
         const userId = req.user.id;
 
-        // 1. Fetch Existing Poll
         const poll = await pollModel.getPollById(id);
         if (!poll) return res.status(404).json({ message: "Poll not found" });
+        if (poll.creator_id !== userId) return res.status(403).json({ message: "Unauthorized" });
 
-        // 2. Permission Check (Must be Creator)
-        if (poll.creator_id !== userId) {
-            return res.status(403).json({ message: "You are not authorized to edit this poll." });
-        }
-
-        // 3. Status Check (Cannot edit if CLOSED)
-        if (poll.status === 'CLOSED') {
-            return res.status(400).json({ message: "Cannot edit a closed poll." });
-        }
-
-        // 4. Prepare Update Data
-        // We merge the new theme/settings with existing ones to avoid losing data
-        const currentTheme = poll.theme_settings || {};
-
-        // Logic: If user sends accessType, update it, otherwise keep old one
-        const newAccessType = settings?.accessType || currentTheme.access_type;
-
-        const updatedTheme = {
-            ...currentTheme,
-            ...(theme || {}), // Overwrite colors/fonts if provided
-            access_type: newAccessType
-        };
-
+        // Build update data
         const updateData = {};
         if (title) updateData.title = title;
-        if (description) updateData.description = description;
-        updateData.theme_settings = updatedTheme;
-       if (schedule?.startDate !== undefined) updateData.start_time = schedule.startDate;  // ✅ ADD
-  if (schedule?.closeDate !== undefined) updateData.end_time = schedule.closeDate;    // ✅ ADD
-
-        // settings updates
-        if (settings?.isAnonymous !== undefined) updateData.is_anonymous = settings.isAnonymous;
-        if (settings?.visibility) updateData.results_visibility = settings.visibility;
-
-        // Allow closing/opening the poll
+        if (description !== undefined) updateData.description = description;
         if (status) updateData.status = status;
+        
+        // Merge theme settings
+        if (theme) {
+            updateData.theme_settings = { 
+                ...poll.theme_settings, 
+                ...theme 
+            };
+        }
+        
+        // Update schedule
+        if (schedule?.startDate) updateData.start_time = new Date(schedule.startDate).toISOString();
+        if (schedule?.closeDate) updateData.end_time = new Date(schedule.closeDate).toISOString();
+        
+        // Update settings (merge with existing)
+        if (settings) {
+            if (settings.isAnonymous !== undefined) updateData.is_anonymous = settings.isAnonymous;
+            if (settings.visibility) updateData.results_visibility = settings.visibility;
+            if (settings.enableComments !== undefined) {
+                updateData.theme_settings = {
+                    ...updateData.theme_settings,
+                    enableComments: settings.enableComments
+                };
+            }
+            if (settings.showResults !== undefined) {
+                updateData.theme_settings = {
+                    ...updateData.theme_settings,
+                    showResults: settings.showResults
+                };
+            }
+        }
 
-        // 5. Update DB
         const updatedPoll = await pollModel.updatePoll(id, updateData);
-
-        res.json({
-            message: "Poll updated successfully",
-            poll: updatedPoll
-        });
+        res.json({ message: "Poll updated", poll: updatedPoll });
 
     } catch (err) {
-        console.error("Edit Poll Error:", err);
+        console.error("Update Poll Error:", err);
         res.status(500).json({ message: "Server Error" });
     }
 };
 
-module.exports = {
-    createPoll,
-    getPoll,
-    getDashboard,
-    editPoll
+// 4. DELETE POLL
+const deletePoll = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const poll = await pollModel.getPollById(id);
+        if (!poll) return res.status(404).json({ message: "Poll not found" });
+        if (poll.creator_id !== userId) return res.status(403).json({ message: "Unauthorized" });
+
+        // Allow deleting DRAFT polls anytime
+        // Prevent deleting CLOSED polls with votes
+        if (poll.status === 'CLOSED') {
+            const voteCount = await pollModel.getVoteCount(id);
+            if (voteCount > 0) {
+                return res.status(400).json({ message: "Cannot delete closed poll with votes" });
+            }
+        }
+
+        await pollModel.deletePoll(id);
+        res.json({ message: "Poll deleted successfully" });
+
+    } catch (err) {
+        console.error("Delete Poll Error:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
 };
 
+// 5. GET DASHBOARD
+const getDashboard = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { search } = req.query;
+        const polls = await pollModel.getUserPolls(userId, search);
+        res.json({ count: polls.length, polls });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching dashboard" });
+    }
+};
+
+module.exports = { 
+    createPoll, 
+    getPoll, 
+    editPoll,  // ← Changed back to editPoll
+    deletePoll, 
+    getDashboard 
+};

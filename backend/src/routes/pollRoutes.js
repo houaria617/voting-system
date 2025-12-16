@@ -19,7 +19,7 @@ router.put('/:id', authenticate, pollController.editPoll);
 // 5. Get Single (Must be last)
 router.get('/:id', optionalAuth, pollController.getPoll);
 
-
+router.delete('/:id', authenticate, pollController.deletePoll);
 
 
 module.exports = router;

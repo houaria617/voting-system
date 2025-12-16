@@ -96,6 +96,52 @@ const updatePoll = async (pollId, updateData) => {
     if (error) throw error;
     return data;
 };
+// 8. DELETE POLL (Soft delete - set status to DELETED)
+const deletePoll = async (pollId) => {
+    const { data, error } = await supabase
+        .from('polls')
+        .update({ status: 'DELETED', deleted_at: new Date() })
+        .eq('id', pollId)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+};
+
+// 9. DELETE POLL OPTIONS (Hard delete related options)
+const deletePollOptions = async (pollId) => {
+    const { data, error } = await supabase
+        .from('poll_options')
+        .delete()
+        .eq('poll_id', pollId);
+
+    if (error) throw error;
+    return data;
+};
+
+// 10. DELETE ALLOWED VOTERS (Clean up permissions)
+const deleteAllowedVoters = async (pollId) => {
+    const { data, error } = await supabase
+        .from('allowed_voters')
+        .delete()
+        .eq('poll_id', pollId);
+
+    if (error) throw error;
+    return data;
+};
+
+// 11. GET VOTE COUNT (For safety check before delete)
+const getVoteCount = async (pollId) => {
+    const { data, error } = await supabase
+        .from('votes')
+        .select('id', { count: 'exact' })
+        .eq('poll_id', pollId);
+
+    if (error) throw error;
+    return data ? data.length : 0;
+};
+
 
 module.exports = {
     createPoll,
@@ -104,6 +150,10 @@ module.exports = {
     addAllowedVoters,
     isUserAllowed,
     getUserPolls,
-    updatePoll
+    updatePoll,
+    deletePoll,
+    deletePollOptions,
+    deleteAllowedVoters,
+    getVoteCount
 };
 

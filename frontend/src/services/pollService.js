@@ -5,13 +5,9 @@ import Swal from 'sweetalert2';
 class PollService {
   /**
    * Create a new poll
-   * @param {Object} pollData - Basic poll data (title, options)
-   * @param {Object} configData - Configuration settings
-   * @returns {Promise<Object>} Created poll data
    */
   async createPoll(pollData, configData) {
     try {
-      // ✅ Validate required fields
       if (!pollData || !pollData.title || pollData.title.trim() === '') {
         throw new Error('Poll must have a title');
       }
@@ -20,7 +16,6 @@ class PollService {
         throw new Error('Poll must have at least 2 options');
       }
 
-      // ✅ Validate dates are present
       if (!configData.startDate || configData.startDate.trim() === '') {
         throw new Error('Start date is required');
       }
@@ -29,7 +24,6 @@ class PollService {
         throw new Error('Close date is required');
       }
 
-      // ✅ Validate date logic
       const startDate = new Date(configData.startDate);
       const closeDate = new Date(configData.closeDate);
 
@@ -45,10 +39,8 @@ class PollService {
         throw new Error('Start date must be before close date');
       }
 
-      // ✅ Store original options for later use
       const originalOptions = pollData.options.filter(opt => opt.trim() !== '').map(opt => opt.trim());
 
-      // ✅ Build complete poll data
       const completeData = {
         title: pollData.title.trim(),
         description: pollData.description?.trim() || '',
@@ -81,12 +73,10 @@ class PollService {
 
       console.log('📤 Creating poll with data:', completeData);
 
-      // Make API request
       const response = await API.post('/polls', completeData);
 
       console.log('✅ Poll created successfully:', response.data);
 
-      // ⚠️ CRITICAL: Check if backend returned options
       let pollWithOptions = response.data.poll || response.data;
       
       if (!pollWithOptions.options && !pollWithOptions.poll_options) {
@@ -94,7 +84,6 @@ class PollService {
         pollWithOptions.options = originalOptions;
       }
 
-      // ⚠️ BACKUP: If backend still didn't return options, fetch the poll again
       if (!pollWithOptions.options && !pollWithOptions.poll_options && pollWithOptions.id) {
         console.warn('⚠️ Attempting to fetch poll with options...');
         try {
@@ -103,13 +92,11 @@ class PollService {
             pollWithOptions = fetchResult.poll;
             console.log('✅ Successfully fetched poll with options');
           } else {
-            // Still no options, add them manually as last resort
             console.error('❌ Backend does not return options - adding manually as fallback');
             pollWithOptions.options = originalOptions;
           }
         } catch (fetchError) {
           console.error('❌ Failed to fetch poll:', fetchError);
-          // Add options manually as last resort
           pollWithOptions.options = originalOptions;
         }
       }
@@ -123,7 +110,6 @@ class PollService {
     } catch (err) {
       console.error('❌ Error creating poll:', err);
 
-      // ✅ Better error message handling
       let errorMessage = 'Failed to create poll';
       
       if (err.response?.data?.message) {
@@ -140,13 +126,141 @@ class PollService {
   }
 
   /**
+   * ✅ Save poll as draft
+   */
+  async saveDraft(pollId, pollData, configData) {
+    try {
+      console.log('💾 [DRAFT] Saving poll as draft...', { pollId, pollData, configData });
+
+      // ✅ Safety checks
+      if (!pollData) {
+        throw new Error('Poll data is required');
+      }
+      if (!configData) {
+        throw new Error('Configuration data is required');
+      }
+
+      let result;
+
+      // 🔧 EDIT MODE: Update existing poll as draft
+      if (pollId) {
+        console.log('📝 [DRAFT-EDIT] Updating poll', pollId, 'as draft');
+
+        const draftUpdateData = {
+          title: pollData.title || 'Untitled Poll',
+          description: pollData.description || '',
+          
+          theme: {
+            primaryColor: configData.primaryColor || '#137fec',
+            secondaryColor: configData.secondaryColor || '#ffffff',
+            selectedTheme: configData.selectedTheme || 'corporate',
+            logo: configData.logo || '',
+            backgroundImage: configData.backgroundImage || '',
+            fontStyle: configData.fontStyle || 'inter'
+          },
+          
+          settings: {
+            isAnonymous: configData.anonymity === 'fully-anonymous',
+            visibility: configData.showResults ? 'ALWAYS' : 'AFTER_VOTE',
+            enableComments: configData.enableComments !== undefined ? configData.enableComments : true,
+            showResults: configData.showResults !== undefined ? configData.showResults : false
+          },
+          
+          schedule: {
+            startDate: configData.startDate || null,
+            closeDate: configData.closeDate || null
+          },
+          
+          status: 'DRAFT' // ✅ Mark as draft
+        };
+
+        result = await this.updatePoll(pollId, draftUpdateData);
+      }
+      // ➕ CREATE MODE: Create new poll as draft
+      else {
+        console.log('➕ [DRAFT-CREATE] Creating new poll as draft');
+
+        const validOptions = (pollData.options || []).filter(opt => opt && opt.trim() !== '');
+        
+        const draftData = {
+          title: pollData.title || 'Untitled Poll',
+          description: pollData.description || '',
+          options: validOptions.length >= 2 ? validOptions : ['Option 1', 'Option 2'],
+          
+          theme: {
+            primaryColor: configData.primaryColor || '#137fec',
+            secondaryColor: configData.secondaryColor || '#ffffff',
+            selectedTheme: configData.selectedTheme || 'corporate',
+            logo: configData.logo || '',
+            backgroundImage: configData.backgroundImage || '',
+            fontStyle: configData.fontStyle || 'inter'
+          },
+          
+          settings: {
+            isAnonymous: configData.anonymity === 'fully-anonymous',
+            visibility: configData.showResults ? 'ALWAYS' : 'AFTER_VOTE',
+            accessType: configData.visibility === 'public' ? 'PUBLIC' : 'PRIVATE',
+            allowMultiple: configData.ismultiplechoice || false,
+            enableComments: configData.enableComments !== undefined ? configData.enableComments : true,
+            showResults: configData.showResults !== undefined ? configData.showResults : false
+          },
+          
+          schedule: {
+            startDate: configData.startDate || null,
+            closeDate: configData.closeDate || null
+          },
+          
+          invitedEmails: configData.visibility === 'private' ? (configData.allowedVoters || []) : [],
+          allowedDomains: configData.visibility === 'private' ? (configData.allowedDomains || []) : [],
+          
+          status: 'DRAFT' // ✅ Mark as draft
+        };
+
+        // For draft, we don't validate strict requirements
+        result = await API.post('/polls', draftData);
+        
+        if (result.data.success !== false) {
+          return {
+            success: true,
+            poll: result.data.poll || result.data,
+            message: 'Poll saved as draft successfully!'
+          };
+        } else {
+          throw new Error(result.data.message || 'Failed to save draft');
+        }
+      }
+
+      if (result.success) {
+        console.log('✅ [DRAFT] Poll saved as draft successfully!');
+        return result;
+      } else {
+        throw new Error(result.message || 'Failed to save draft');
+      }
+
+    } catch (error) {
+      console.error('❌ [DRAFT] Error saving draft:', error);
+
+      let errorMessage = 'Failed to save draft';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  }
+
+  /**
    * Update an existing poll
-   * @param {string} pollId - Poll ID
-   * @param {Object} updateData - Data to update
-   * @returns {Promise<Object>} Updated poll data
    */
   async updatePoll(pollId, updateData) {
     try {
+      console.log('📝 Updating poll:', pollId, updateData);
+
       const response = await API.put(`/polls/${pollId}`, updateData);
 
       return {
@@ -166,11 +280,11 @@ class PollService {
 
   /**
    * Delete a poll
-   * @param {string} pollId - Poll ID
-   * @returns {Promise<Object>} Success status
    */
   async deletePoll(pollId) {
     try {
+      console.log('🗑️ Deleting poll:', pollId);
+
       await API.delete(`/polls/${pollId}`);
 
       return {
@@ -189,8 +303,6 @@ class PollService {
 
   /**
    * Get a single poll
-   * @param {string} pollId - Poll ID
-   * @returns {Promise<Object>} Poll data
    */
   async getPoll(pollId) {
     try {
@@ -214,7 +326,6 @@ class PollService {
 
   /**
    * Get all polls for current user
-   * @returns {Promise<Object>} List of polls
    */
   async getMyPolls() {
     try {
@@ -235,89 +346,55 @@ class PollService {
   }
 
   /**
-   * Validate email format
-   * @param {string} email - Email to validate
-   * @returns {boolean} Is valid
+   * Submit a vote
    */
-  isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  /**
-   * Validate image URL
-   * @param {string} url - Image URL
-   * @returns {Promise<boolean>} Is valid image
-   */
-  validateImageUrl(url) {
-    if (!url) return Promise.resolve(true);
-    
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = url;
+  async vote(pollId, optionIdOrArray) {
+    try {
+      console.log('🗳️ Submitting vote for poll:', pollId, 'option(s):', optionIdOrArray);
       
-      // Timeout to prevent hanging
-      setTimeout(() => resolve(false), 5000);
-    });
-  }
-/**
- * Submit a vote (single or multiple choice)
- * @param {string} pollId - Poll ID
- * @param {number|string|array} optionId - Single option ID or array of IDs
- * @returns {Promise<Object>} Vote result
- */
-async vote(pollId, optionIdOrArray) {
-  try {
-    console.log('🗳️ Submitting vote for poll:', pollId, 'option(s):', optionIdOrArray);
-    
-    // Ensure it's always an array (backend expects optionId as array)
-    const optionIds = Array.isArray(optionIdOrArray) 
-      ? optionIdOrArray 
-      : [optionIdOrArray];
+      const optionIds = Array.isArray(optionIdOrArray) 
+        ? optionIdOrArray 
+        : [optionIdOrArray];
 
-    if (!optionIds || optionIds.length === 0) {
-      throw new Error('No option selected');
-    }
-
-    const token = localStorage.getItem('token');
-    
-    const response = await API.post(`/polls/${pollId}/vote`, {
-      optionId: optionIds  // Send as array for multiple choice support
-    }, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json'
+      if (!optionIds || optionIds.length === 0) {
+        throw new Error('No option selected');
       }
-    });
 
-    console.log('✅ Vote successful:', response.data);
-    
-    return {
-      success: true,
-      data: response.data,
-      message: response.data.message || 'Vote recorded successfully!'
-    };
+      const token = localStorage.getItem('token');
+      
+      const response = await API.post(`/polls/${pollId}/vote`, {
+        optionId: optionIds
+      }, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
 
-  } catch (err) {
-    console.error('❌ Vote error:', err);
-    
-    let errorMessage = 'Failed to submit vote';
-    if (err.response?.data?.message) {
-      errorMessage = err.response.data.message;
-    } else if (err.message) {
-      errorMessage = err.message;
+      console.log('✅ Vote successful:', response.data);
+      
+      return {
+        success: true,
+        data: response.data,
+        message: response.data.message || 'Vote recorded successfully!'
+      };
+
+    } catch (err) {
+      console.error('❌ Vote error:', err);
+      
+      let errorMessage = 'Failed to submit vote';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
-
-    return {
-      success: false,
-      message: errorMessage
-    };
   }
-}
-
-  
 }
 
 // Export as singleton

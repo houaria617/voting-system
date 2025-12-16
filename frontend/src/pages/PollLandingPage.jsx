@@ -166,40 +166,17 @@ const handleEditPoll = () => {
 };
 
   const handleSharePoll = () => {
-  if (!poll) return;
-  
-  console.log('📤 [SHARE] Sharing poll:', poll.id);
-  
-  navigate(`/share-poll/${poll.id}`, {
-    state: { 
-      poll: poll,
-      pollId: poll.id,
-      options: options
-    }
-  });
-};
+    if (!poll) return;
+    navigate('/share-poll', {
+      state: { poll: { ...poll, options }, pollId: poll.id }
+    });
+  };
 
   // ✅ Loading state
   if (isLoading) {
     return (
-  <div 
-    className="poll-landing-page"
-    data-theme={formattedPollData.theme.selectedTheme || 'corporate'}
-    style={{
-      '--primary-color': formattedPollData.theme.primaryColor || '#137fec',
-      '--secondary-color': formattedPollData.theme.secondaryColor || '#ffffff',
-      '--font-family': formattedPollData.theme.fontStyle === 'roboto' ? "'Roboto', sans-serif" : 
-                      formattedPollData.theme.fontStyle === 'poppins' ? "'Poppins', sans-serif" : 
-                      formattedPollData.theme.fontStyle === 'playfair' ? "'Playfair Display', serif" : 
-                      "'Inter', sans-serif",
-      backgroundImage: formattedPollData.theme.backgroundImage ? `url(${formattedPollData.theme.backgroundImage})` : 'none'
-    }}
-  >
-    {/* ⭐ ADD CUSTOM LOGO to PageHeader */}
-    <PageHeader 
-      onBackToDashboard={handleBackToDashboard}
-      logoUrl={formattedPollData.theme.logo}
-    />
+      <div className="poll-landing-page">
+        <PageHeader onBackToDashboard={handleBackToDashboard} />
         <main className="poll-landing-main">
           <div className="poll-landing-container">
             <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>

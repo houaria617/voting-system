@@ -1,239 +1,344 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import PageHeader from '../components/pollLanding/PageHeader';
-import PollQuestion from '../components/pollLanding/PollQuestion';
-import PollActions from '../components/pollLanding/PollActions';
-import pollService from '../services/pollService';
-import Swal from 'sweetalert2';
-import '../styles/pollLanding.css'; // Reuse same CSS + themes
+import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import '../styles/pollVoting.css';
 
-const PollVotePage = () => {
-  const { pollId } = useParams();
-  const navigate = useNavigate();
-  
-  // States
+const PollVotingPage = () => {
+  // ✅ STATE HOOKS
   const [poll, setPoll] = useState(null);
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [pollClosed, setPollClosed] = useState(false);
 
-  // Load poll data
+  // ✅ GET POLL ID FROM URL
   useEffect(() => {
-    const loadPoll = async () => {
+    const loadPollData = async () => {
       try {
-        const result = await pollService.getPoll(pollId);
-        if (result.success) {
-          const pollData = result.poll;
-          setPoll(pollData);
-          
-          const pollOptions = pollData.poll_options?.map(opt => ({
-            id: opt.id,
-            text: opt.option_text || opt.text,
-            vote_count_cache: opt.vote_count_cache || 0
-          })) || [];
-          
-          setOptions(pollOptions);
-          setHasVoted(result.user_has_voted || false);
-        } else {
-          throw new Error(result.message || 'Poll not found');
+        setIsLoading(true);
+        const pathParts = window.location.pathname.split('/');
+        const pollIdFromUrl = pathParts[pathParts.length - 1];
+
+        if (!pollIdFromUrl) {
+          setError('Poll not found');
+          setIsLoading(false);
+          return;
         }
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Poll Not Found',
-          text: error.message,
-          confirmButtonColor: '#137fec'
-        }).then(() => navigate('/dashboard'));
-      } finally {
+
+        console.log('📥 Loading poll:', pollIdFromUrl);
+
+        // Fetch poll data from API
+        const response = await fetch(`/api/polls/${pollIdFromUrl}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Poll not found');
+          } else {
+            setError('Failed to load poll');
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        const pollData = data.poll || data;
+
+        // Extract poll options
+        let pollOptions = [];
+        if (pollData.options && Array.isArray(pollData.options)) {
+          pollOptions = pollData.options;
+        } else if (pollData.poll_options && Array.isArray(pollData.poll_options)) {
+          pollOptions = pollData.poll_options.map((opt, idx) => ({
+            id: opt.id || idx + 1,
+            text: opt.option_text || opt.text || opt,
+            votes: opt.vote_count || 0
+          }));
+        }
+
+        if (!pollOptions || pollOptions.length === 0) {
+          setError('Poll has no options');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if poll is closed
+        const closeDate = new Date(pollData.end_time || pollData.closeDate);
+        if (new Date() > closeDate) {
+          setPollClosed(true);
+        }
+
+        setPoll(pollData);
+        setOptions(pollOptions);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('❌ Error loading poll:', err);
+        setError('Error loading poll data');
         setIsLoading(false);
       }
     };
 
-    loadPoll();
-  }, [pollId, navigate]);
+    loadPollData();
+  }, []);
 
-  // Formatted data for components (SAME as landing)
-  const formattedPollData = poll && options.length ? {
-    question: poll.title,
-    description: poll.description || '',
-    options: options.map((opt, index) => ({
-      id: opt.id,
-      text: opt.text,
-      votes: opt.vote_count_cache || 0
-    })),
-    theme: poll.theme_settings || {},
-    settings: {
-      allowMultiple: poll.allow_multiple_choices,
-      isAnonymous: poll.is_anonymous,
-      visibility: poll.results_visibility
-    }
-  } : null;
+  // ✅ HANDLE OPTION SELECTION
+  const handleOptionChange = (optionId) => {
+    console.log('🔘 Selected:', optionId, 'Multiple:', poll?.allow_multiple_choices);
 
-  // Handle voting
-  const handleVote = async () => {
-    if (!formattedPollData) return;
-    
-    const isMultiple = formattedPollData.settings.allowMultiple;
-    const selection = isMultiple ? selectedOptions : selectedOption;
-    
-    if (!selection || (Array.isArray(selection) && selection.length === 0)) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Please select an option',
-        confirmButtonColor: '#137fec'
+    if (poll?.allow_multiple_choices) {
+      setSelectedOptions(prev => {
+        if (prev.includes(optionId)) {
+          return prev.filter(id => id !== optionId);
+        }
+        return [...prev, optionId];
       });
+    } else {
+      if (selectedOption === optionId) {
+        setSelectedOption(null);
+      } else {
+        setSelectedOption(optionId);
+      }
+    }
+  };
+
+  // ✅ SUBMIT VOTE
+  const handleSubmitVote = async () => {
+    const pollIdFromUrl = window.location.pathname.split('/').pop();
+    const optionsToSubmit = poll?.allow_multiple_choices ? selectedOptions : selectedOption;
+
+    if (!optionsToSubmit || (Array.isArray(optionsToSubmit) && optionsToSubmit.length === 0)) {
+      alert('Please select an option before voting');
       return;
     }
 
-    setIsSubmitting(true);
-    
+    setIsVoting(true);
+
     try {
-      const result = await pollService.vote(pollId, selection);
-      
-      if (result.success) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Vote Recorded!',
-          text: 'Thank you for voting!',
-          timer: 2000,
-          showConfirmButton: false
-        });
-        
-        // Refresh poll data to show updated counts
-        const freshPoll = await pollService.getPoll(pollId);
-        if (freshPoll.success) {
-          setPoll(freshPoll.poll);
-          const freshOptions = freshPoll.poll.poll_options?.map(opt => ({
-            id: opt.id,
-            text: opt.option_text,
-            vote_count_cache: opt.vote_count_cache || 0
-          })) || [];
-          setOptions(freshOptions);
-          setHasVoted(true);
-        }
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Voting Failed',
-        text: error.message || 'Please try again',
-        confirmButtonColor: '#137fec'
+      console.log('🗳️ Submitting vote:', optionsToSubmit);
+
+      const response = await fetch(`/api/polls/${pollIdFromUrl}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({
+          optionId: optionsToSubmit
+        })
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          setHasVoted(true);
+          alert(data.message || 'You have already voted on this poll');
+        } else {
+          alert(data.message || 'Failed to submit vote');
+        }
+        setIsVoting(false);
+        return;
+      }
+
+      // ✅ SUCCESS - Show message and disable voting
+      setHasVoted(true);
+      alert('Thank you! Your vote has been recorded');
+      console.log('✅ Vote successful:', data);
+    } catch (err) {
+      console.error('❌ Vote error:', err);
+      alert('An error occurred while submitting your vote');
     } finally {
-      setIsSubmitting(false);
+      setIsVoting(false);
     }
   };
 
-  const handleOptionChange = (optionId, isMultipleChoice) => {
-    if (hasVoted) return; // Prevent changes after voting
-    
-    if (isMultipleChoice) {
-      setSelectedOptions(prev => 
-        prev.includes(optionId) 
-          ? prev.filter(id => id !== optionId)
-          : [...prev, optionId]
-      );
-    } else {
-      setSelectedOption(prev => prev === optionId ? null : optionId);
-    }
-  };
-
-  const handleBackToDashboard = () => navigate('/dashboard');
-
-  if (isLoading) {
+  // ✅ ACCESS DENIED PAGE
+  if (error === 'Poll not found') {
     return (
-      <div className="poll-landing-page" data-theme="corporate">
-        <PageHeader onBackToDashboard={handleBackToDashboard} />
-        <main className="poll-landing-main">
-          <div className="poll-landing-container">
-            <div style={{ textAlign: 'center', padding: '3rem' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-              <p>Loading poll...</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (!formattedPollData) {
-    return (
-      <div className="poll-landing-page">
-        <PageHeader onBackToDashboard={handleBackToDashboard} />
-        <main className="poll-landing-main">
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
-            <div style={{ fontSize: '2rem' }}>⚠️</div>
-            <p>Poll not available</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
- return (
-  <div
-    className="poll-landing-page"
-    data-theme={formattedPollData.theme.selectedTheme || 'corporate'}
-    style={{
-      '--primary-color': formattedPollData.theme.primaryColor || '#137fec',
-      '--secondary-color': formattedPollData.theme.secondaryColor || '#ffffff',
-      '--font-family': "'Inter', sans-serif",
-      backgroundImage: formattedPollData.theme.backgroundImage
-        ? `url(${formattedPollData.theme.backgroundImage})`
-        : 'none'
-    }}
-  >
-    <PageHeader onBackToDashboard={handleBackToDashboard} />
-
-    <main className="poll-landing-main">
-      <div className="poll-landing-container">
-        <div className="page-intro">
-          <h1 className="page-title">{formattedPollData.question}</h1>
-          <p className="page-subtitle">
-            {formattedPollData.settings.allowMultiple
-              ? 'You can select multiple options.'
-              : 'Please select one option.'}
+      <div className="access-denied-page">
+        <div className="access-denied-card">
+          <AlertCircle className="access-denied-icon" />
+          <h1 className="access-denied-title">Access Denied</h1>
+          <p className="access-denied-text">
+            The poll you're looking for doesn't exist or you don't have access to it.
           </p>
-        </div>
-
-        <div className="poll-question-card">
-          <PollQuestion
-            question={formattedPollData.question}
-            description={formattedPollData.description}
-            options={formattedPollData.options}
-            selectedOption={
-              formattedPollData.settings.allowMultiple
-                ? selectedOptions
-                : selectedOption
-            }
-            onOptionChange={handleOptionChange}
-            isMultipleChoice={formattedPollData.settings.allowMultiple}
-            hasVoted={hasVoted}
-          />
-
           <button
-            className="submit-button"
-            onClick={handleVote}
-            disabled={
-              isSubmitting ||
-              (!formattedPollData.settings.allowMultiple &&
-                !selectedOption) ||
-              (formattedPollData.settings.allowMultiple &&
-                selectedOptions.length === 0) ||
-              hasVoted
-            }
+            onClick={() => window.location.href = '/dashboard'}
+            className="access-denied-btn"
           >
-            {hasVoted ? 'You already voted' : isSubmitting ? 'Submitting…' : 'Submit Vote'}
+            Back to Dashboard
           </button>
         </div>
       </div>
-    </main>
-  </div>
-);
+    );
+  }
 
+  // ✅ LOADING STATE
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-card">
+          <div className="loading-emoji">⏳</div>
+          <p className="loading-text">Loading poll...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ POLL NOT LOADED
+  if (!poll) {
+    return (
+      <div className="loading-container">
+        <div className="loading-card">
+          <AlertCircle className="access-denied-icon" />
+          <p className="loading-text">Poll data not available</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ FORMAT DATE
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not set';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="voting-page-container">
+      <div className="voting-wrapper">
+        {/* ✅ POLL HEADER */}
+        <div className="voting-header">
+          <h1 className="voting-title" style={{ color: poll.theme_settings?.primaryColor || '#137fec' }}>
+            {poll.title}
+          </h1>
+          {poll.description && (
+            <p className="voting-description">{poll.description}</p>
+          )}
+
+          {/* ✅ POLL INFO STATS */}
+          <div className="voting-info-box">
+            <div className="voting-info-content">
+              <div className="voting-info-item">
+                <strong>Poll ID:</strong> {poll.id}
+              </div>
+              <div className="voting-info-item">
+                <strong>Options:</strong> {options.length}
+              </div>
+              <div className="voting-info-item">
+                <strong>Type:</strong>
+                <span className={`voting-type-badge ${poll.allow_multiple_choices ? 'voting-type-multiple' : 'voting-type-single'}`}>
+                  {poll.allow_multiple_choices ? '☑️ Multiple' : '🔘 Single'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ POLL CLOSED MESSAGE */}
+        {pollClosed && (
+          <div className="alert-message alert-closed">
+            <AlertCircle className="alert-icon" />
+            <div>
+              <span className="alert-title">Poll Closed</span>
+              <span className="alert-closed-text"> - Voting is no longer available for this poll</span>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ ALREADY VOTED MESSAGE */}
+        {hasVoted && (
+          <div className="alert-message alert-voted">
+            <CheckCircle className="alert-icon" />
+            <div>
+              <span className="alert-title alert-voted-text">Thank You!</span>
+              <span className="alert-voted-text"> - You have already voted on this poll</span>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ VOTING CARD */}
+        <div className="voting-card">
+          <h2 className="voting-card-title">Cast Your Vote</h2>
+
+          {/* ✅ OPTIONS */}
+          <div className="voting-options-container">
+            {options.map((option, idx) => {
+              const optionId = option.id || idx + 1;
+              const isSelected = poll.allow_multiple_choices
+                ? selectedOptions.includes(optionId)
+                : selectedOption === optionId;
+
+              return (
+                <label
+                  key={optionId}
+                  className={`voting-option ${isSelected ? 'selected' : ''} ${hasVoted || pollClosed ? 'disabled' : ''}`}
+                  onClick={() => !hasVoted && !pollClosed && handleOptionChange(optionId)}
+                >
+                  <input
+                    type={poll.allow_multiple_choices ? 'checkbox' : 'radio'}
+                    checked={isSelected}
+                    onChange={() => {}}
+                    disabled={hasVoted || pollClosed}
+                  />
+                  <span className="voting-option-label">
+                    {typeof option === 'string' ? option : option.text}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+
+          {/* ✅ SUBMIT BUTTON */}
+          <button
+            onClick={handleSubmitVote}
+            disabled={hasVoted || pollClosed || isVoting}
+            className="voting-submit-btn"
+          >
+            {isVoting ? '⏳ Submitting...' : hasVoted ? '✅ Already Voted' : pollClosed ? '❌ Poll Closed' : 'Submit Vote'}
+          </button>
+        </div>
+
+        {/* ✅ SCHEDULE INFO - BOTTOM */}
+        <div className="schedule-section">
+          <div className="schedule-header">
+            <Clock className="schedule-icon" />
+            <div className="schedule-content">
+              <h3 className="schedule-title">Poll Schedule</h3>
+              <div className="schedule-dates">
+                <div className="schedule-date-item">
+                  <p className="schedule-date-label">Starts:</p>
+                  <p className="schedule-date-value">
+                    {formatDate(poll.start_time || poll.start_date || poll.startDate)}
+                  </p>
+                </div>
+                <div className="schedule-date-item">
+                  <p className="schedule-date-label">Closes:</p>
+                  <p className="schedule-date-value">
+                    {formatDate(poll.end_time || poll.end_date || poll.closeDate)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {pollClosed && (
+            <div className="schedule-closed-message">
+              This poll has ended and is no longer accepting votes.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
-export default PollVotePage;
+export default PollVotingPage;

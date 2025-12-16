@@ -12,16 +12,18 @@ const ConfigurePollPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { pollId } = useParams();
-  
+
   const [activeTab, setActiveTab] = useState("General");
   const [visitedTabs, setVisitedTabs] = useState(["General"]);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [pollDataState, setPollDataState] = useState(
-    { title: '', description: '', options: ['', ''] }
-  );
+  const [pollDataState, setPollDataState] = useState({
+    title: '',
+    description: '',
+    options: ['', '']
+  });
 
   const [configData, setConfigData] = useState({
     anonymity: "fully-anonymous",
@@ -52,7 +54,6 @@ const ConfigurePollPage = () => {
       const day = String(date.getDate()).padStart(2, '0');
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
-      
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     } catch (error) {
       console.error('Error formatting date:', error, isoString);
@@ -62,25 +63,27 @@ const ConfigurePollPage = () => {
 
   useEffect(() => {
     console.log('🔄 ConfigurePoll MOUNT - pollId:', pollId, 'state:', state);
-    
+
     const initializeData = async () => {
       try {
         setIsLoading(true);
 
+        // EDIT MODE: Load existing poll
         if (pollId) {
           console.log('✏️ EDIT MODE: Loading poll', pollId);
           setIsEditing(true);
-          
+
           const result = await pollService.getPoll(pollId);
-          
+
           if (result.success) {
             const existingPoll = result.poll;
             console.log('✅ Poll loaded for editing:', existingPoll);
-            
+
+            // Extract options
             const optionsArray = (existingPoll.poll_options || [])
               .map(opt => typeof opt === 'string' ? opt : opt.option_text || opt.text || '')
               .filter(opt => opt && opt.trim());
-            
+
             setPollDataState({
               title: existingPoll.title || '',
               description: existingPoll.description || '',
@@ -92,8 +95,8 @@ const ConfigurePollPage = () => {
               visibility: (existingPoll.theme_settings?.access_type === 'PUBLIC' || existingPoll.access_type === 'PUBLIC') ? "public" : "private",
               startDate: formatDateForInput(existingPoll.start_time),
               closeDate: formatDateForInput(existingPoll.end_time),
-              enableComments: existingPoll.settings?.enableComments ?? true,
-              showResults: existingPoll.settings?.showResults ?? false,
+              enableComments: existingPoll.theme_settings?.enableComments ?? true,
+              showResults: existingPoll.theme_settings?.showResults ?? false,
               allowedVoters: existingPoll.invitedEmails || [],
               allowedDomains: existingPoll.allowedDomains || [],
               selectedTheme: existingPoll.theme_settings?.selectedTheme || "corporate",
@@ -114,6 +117,7 @@ const ConfigurePollPage = () => {
           }
         }
 
+        // CREATE MODE: Use state data or defaults
         if (state?.pollData) {
           console.log('➕ CREATE MODE: Using state.pollData');
           setIsEditing(false);
@@ -130,8 +134,8 @@ const ConfigurePollPage = () => {
         console.error('❌ Error initializing:', error);
         setIsLoading(false);
         Swal.fire({
-          icon: 'error', 
-          title: 'Load Failed', 
+          icon: 'error',
+          title: 'Load Failed',
           text: error.message || 'Cannot load poll data',
           confirmButtonColor: '#137fec'
         }).then(() => navigate('/dashboard'));
@@ -166,9 +170,6 @@ const ConfigurePollPage = () => {
 
   const savePoll = async () => {
     console.log('💾 Saving poll...');
-    console.log('📋 Current pollData:', pollDataState);
-    console.log('⚙️ Current configData:', configData);
-    console.log('🔧 isEditing:', isEditing);
 
     // Validate poll title
     if (!pollDataState.title || pollDataState.title.trim() === '') {
@@ -246,18 +247,14 @@ const ConfigurePollPage = () => {
       });
 
       let result;
-      
-      // ✅ UPDATE - Only send allowed fields
+
+      // UPDATE MODE
       if (isEditing && pollId) {
-        console.log('📝 UPDATING POLL - Sending only allowed fields');
-        
-        // ✅ RESTRICTED UPDATE: Only fields backend accepts
+        console.log('📝 UPDATING POLL');
+
         const updateData = {
-          // ✅ Basic Info (ALLOWED)
           title: pollDataState.title,
           description: pollDataState.description,
-          
-          // ✅ Theme (ALLOWED - merges with existing)
           theme: {
             primaryColor: configData.primaryColor,
             secondaryColor: configData.secondaryColor,
@@ -266,37 +263,24 @@ const ConfigurePollPage = () => {
             backgroundImage: configData.backgroundImage,
             fontStyle: configData.fontStyle
           },
-          
-          // ✅ Settings (ONLY allowed fields)
           settings: {
             isAnonymous: configData.anonymity === 'fully-anonymous',
             visibility: configData.showResults ? 'ALWAYS' : 'AFTER_VOTE',
             enableComments: configData.enableComments,
             showResults: configData.showResults
-            // ❌ NOT INCLUDED: allowMultiple, selectionLimit, minSelectionLimit
           },
-          
-          // ✅ Schedule (ALLOWED)
           schedule: {
             startDate: configData.startDate,
             closeDate: configData.closeDate
-          }
-          
-          // ❌ NOT INCLUDED IN UPDATE:
-          // - options (backend doesn't allow)
-          // - ismultiplechoice / allowMultiple (backend doesn't allow)
-          // - invitedEmails (backend doesn't allow)
-          // - allowedDomains (backend doesn't allow)
-          // - accessType (backend doesn't allow)
+          },
+          status: 'ACTIVE' // Publish when saving
         };
-        
-        console.log('📤 UPDATE PAYLOAD (restricted fields only):', updateData);
-        
+
         result = await pollService.updatePoll(pollId, updateData);
-      } 
-      // ✅ CREATE - All fields allowed
+      }
+      // CREATE MODE
       else {
-        console.log('➕ CREATING NEW POLL - All fields allowed');
+        console.log('➕ CREATING NEW POLL');
         result = await pollService.createPoll(pollDataState, configData);
       }
 
@@ -315,6 +299,7 @@ const ConfigurePollPage = () => {
       } else {
         throw new Error(result.message);
       }
+
     } catch (err) {
       console.error("❌ Error saving poll:", err);
       Swal.fire({
@@ -331,12 +316,14 @@ const ConfigurePollPage = () => {
   return (
     <div className="config-page-container">
       <TopBar pollData={pollDataState} isEditing={isEditing} />
-      <TabNavigation 
+      
+      <TabNavigation
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         visitedTabs={visitedTabs}
         configData={configData}
       />
+      
       <MainContent
         activeTab={activeTab}
         markTabAsVisited={markTabAsVisited}
@@ -346,6 +333,7 @@ const ConfigurePollPage = () => {
         setPollData={setPollDataState}
         isEditing={isEditing}
       />
+      
       <BottomBar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -354,7 +342,9 @@ const ConfigurePollPage = () => {
         onSave={savePoll}
         isSaving={isSaving}
         pollData={pollDataState}
+        configData={configData} // ✅ Make sure this is here
         isEditing={isEditing}
+        pollId={pollId}
       />
     </div>
   );
