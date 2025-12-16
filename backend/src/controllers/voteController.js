@@ -20,7 +20,7 @@ const submitVote = async (req, res) => {
             return res.status(404).json({ message: "Poll not found" });
         }
 
-        // === 🛑 SECURITY FIX: Verify Option belongs to Poll ===
+        // === SECURITY FIX: Verify Option belongs to Poll ===
         // We loop through the poll's options to make sure the sent optionId exists there.
         const isValidOption = poll.poll_options.some(opt => opt.id === parseInt(optionId));
 
