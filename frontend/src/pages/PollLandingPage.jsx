@@ -350,14 +350,191 @@ const PollLandingPage = () => {
               `}
             </style>
             
-            <PollQuestion
-              question={formattedPollData.question}
-              description={formattedPollData.description}
-              options={formattedPollData.options}
-              selectedOption={formattedPollData.settings.allowMultiple ? selectedOptions : selectedOption}
-              onOptionChange={handleOptionChange}
-              isMultipleChoice={formattedPollData.settings.allowMultiple}
+            <div style={{
+  backgroundColor: theme.cardBackground,
+  backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  borderRadius: '12px',
+  padding: '2rem',
+  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  border: `1px solid ${theme.primaryColor}20`
+}}>
+  {/* ✅ THEMED POLL CARD */}
+  <style>
+    {`
+      .poll-question-card {
+        --theme-primary: ${theme.primaryColor};
+        --theme-text: ${theme.textColor};
+        --theme-card-bg: ${theme.cardBackground};
+      }
+      
+      .question-title {
+        color: ${theme.textColor} !important;
+      }
+      
+      .question-description {
+        color: ${theme.textColor} !important;
+        opacity: 0.8;
+      }
+      
+      .submit-button {
+        background-color: ${theme.primaryColor} !important;
+        color: ${theme.secondaryColor} !important;
+        cursor: pointer !important;
+      }
+      
+      .submit-button:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-2px);
+      }
+      
+      .submit-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed !important;
+      }
+      
+      .radio-option input:checked + .radio-checkmark {
+        border-color: ${theme.primaryColor} !important;
+      }
+      
+      .radio-option input:checked + .radio-checkmark::after {
+        background-color: ${theme.primaryColor} !important;
+      }
+    `}
+  </style>
+  
+  <div className="poll-question-card">
+    <div className="question-header">
+      <h2 className="question-title">{formattedPollData.question}</h2>
+      
+      {/* ✅ Voting Type Label */}
+      <p style={{
+        fontSize: '0.875rem',
+        color: theme.textColor,
+        marginTop: '0.5rem',
+        marginBottom: '0.5rem',
+        fontWeight: '500',
+        opacity: 0.7
+      }}>
+        {formattedPollData.settings.allowMultiple ? '☑️ Multiple Choice' : '🔘 Single Choice Only'}
+      </p>
+      
+      {formattedPollData.description && (
+        <p className="question-description">{formattedPollData.description}</p>
+      )}
+    </div>
+
+    <div className="options-list">
+      {formattedPollData.options.length > 0 ? (
+        formattedPollData.options.map(option => (
+          <label
+            key={option.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '1rem',
+              marginBottom: '0.75rem',
+              border: `2px solid ${formattedPollData.settings.allowMultiple 
+                ? (selectedOptions.includes(option.id) ? theme.primaryColor : '#e5e7eb')
+                : (selectedOption === option.id ? theme.primaryColor : '#e5e7eb')
+              }`,
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              backgroundColor: formattedPollData.settings.allowMultiple 
+                ? (selectedOptions.includes(option.id) ? `${theme.primaryColor}10` : 'white')
+                : (selectedOption === option.id ? `${theme.primaryColor}10` : 'white'),
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => handleOptionChange(option.id, formattedPollData.settings.allowMultiple)}
+          >
+            <input
+              type={formattedPollData.settings.allowMultiple ? 'checkbox' : 'radio'}
+              name="poll-option"
+              value={option.id}
+              checked={formattedPollData.settings.allowMultiple 
+                ? selectedOptions.includes(option.id)
+                : selectedOption === option.id
+              }
+              onChange={() => {}}
+              style={{
+                width: '20px',
+                height: '20px',
+                marginRight: '1rem',
+                cursor: 'pointer',
+                accentColor: theme.primaryColor
+              }}
             />
+            <span style={{
+              fontSize: '1rem',
+              color: theme.textColor,
+              fontWeight: formattedPollData.settings.allowMultiple 
+                ? (selectedOptions.includes(option.id) ? '600' : '400')
+                : (selectedOption === option.id ? '600' : '400')
+            }}>
+              {option.text}
+            </span>
+          </label>
+        ))
+      ) : (
+        <p style={{ 
+          color: '#9ca3af', 
+          fontStyle: 'italic',
+          padding: '2rem',
+          textAlign: 'center'
+        }}>
+          No options available
+        </p>
+      )}
+    </div>
+
+    {/* ✅ SUBMIT BUTTON - NOW FUNCTIONAL FOR PREVIEW */}
+    <button 
+      className="submit-button"
+      disabled={formattedPollData.settings.allowMultiple 
+        ? selectedOptions.length === 0 
+        : !selectedOption
+      }
+      onClick={() => {
+        const selected = formattedPollData.settings.allowMultiple ? selectedOptions : selectedOption;
+        alert(`✅ Vote Preview: You selected option(s): ${selected}`);
+      }}
+      style={{
+        width: '100%',
+        padding: '0.875rem',
+        backgroundColor: theme.primaryColor,
+        color: theme.secondaryColor,
+        border: 'none',
+        borderRadius: '0.5rem',
+        fontSize: '1rem',
+        fontWeight: '600',
+        cursor: formattedPollData.settings.allowMultiple 
+          ? (selectedOptions.length === 0 ? 'not-allowed' : 'pointer')
+          : (!selectedOption ? 'not-allowed' : 'pointer'),
+        opacity: formattedPollData.settings.allowMultiple 
+          ? (selectedOptions.length === 0 ? 0.5 : 1)
+          : (!selectedOption ? 0.5 : 1),
+        transition: 'all 0.2s ease',
+        marginTop: '1.5rem'
+      }}
+    >
+      Submit Vote (Preview Only)
+    </button>
+
+    {/* ✅ PREVIEW NOTICE */}
+    <div style={{
+      marginTop: '1rem',
+      padding: '0.75rem 1rem',
+      backgroundColor: '#fef3c7',
+      borderLeft: `4px solid #f59e0b`,
+      borderRadius: '0.5rem',
+      fontSize: '0.875rem',
+      color: '#92400e'
+    }}>
+     This is a preview. Actual votes will be submitted through the public voting page.
+    </div>
+  </div>
+</div>
           </div>
 
           {/* ✅ THEMED ACTIONS */}

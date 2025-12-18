@@ -126,22 +126,20 @@ class VoteService {
 
       console.log('🗳️ Submitting vote for poll:', pollId, 'option(s):', optionId);
 
-      // Ensure optionId is always an array for backend
-      const optionIds = Array.isArray(optionId) ? optionId : [optionId];
+      // ✅ FIX: Send as SINGLE NUMBER, not array
+      const finalOptionId = Array.isArray(optionId) ? optionId[0] : optionId;
 
-      // Get token from localStorage
+      console.log('📤 Sending optionId as:', finalOptionId, 'Type:', typeof finalOptionId);
+
       const token = localStorage.getItem('token');
-
-      // Create headers with auth token if available
       const headers = {};
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Submit vote to backend
       const response = await API.post(
         `/polls/${pollId}/vote`,
-        { optionId: optionIds },
+        { optionId: finalOptionId },  // ✅ Single number!
         { headers }
       );
 
@@ -155,7 +153,6 @@ class VoteService {
     } catch (err) {
       console.error('❌ Vote error:', err.message);
 
-      // Handle specific error responses
       if (err.response) {
         const status = err.response.status;
         const data = err.response.data;
@@ -185,7 +182,7 @@ class VoteService {
           return {
             success: false,
             error: 'Server error',
-            message: data.message || 'Server error - please try again',
+            message: data.message || data.details || 'Server error - please try again',
             statusCode: 500
           };
         }
@@ -198,7 +195,6 @@ class VoteService {
         };
       }
 
-      // Handle network errors
       return {
         success: false,
         error: 'Network error',
@@ -206,7 +202,6 @@ class VoteService {
       };
     }
   }
-
   /**
    * Format date to readable string
    * @param {string} dateString - Date string

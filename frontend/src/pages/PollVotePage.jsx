@@ -17,74 +17,115 @@ const PollVotingPage = () => {
   const [theme, setTheme] = useState(null);
 
   // ✅ GET POLL ID FROM URL AND LOAD DATA
-  useEffect(() => {
-    const loadPollData = async () => {
-      try {
-        setIsLoading(true);
+  // Updated PollVotingPage with access check
 
-        // Extract poll ID from URL
-        const pathParts = window.location.pathname.split('/');
-        const pollIdFromUrl = pathParts[pathParts.length - 1];
+useEffect(() => {
+  const loadPollData = async () => {
+    try {
+      setIsLoading(true);
 
-        if (!pollIdFromUrl) {
-          setError('Poll not found');
-          setIsLoading(false);
-          return;
-        }
+      // Extract poll ID from URL
+      const pathParts = window.location.pathname.split('/');
+      const pollIdFromUrl = pathParts[pathParts.length - 1];
 
-        console.log('========================================');
-        console.log('📥 LOADING POLL FOR VOTING');
-        console.log('========================================');
-
-        // Fetch poll using service
-        const result = await voteService.getPoll(pollIdFromUrl);
-
-        if (!result.success) {
-          setError(result.error);
-          setIsLoading(false);
-          return;
-        }
-
-        const pollData = result.poll;
-
-        // Format options using service
-        const formattedOptions = voteService.formatOptions(pollData);
-
-        if (!formattedOptions || formattedOptions.length === 0) {
-          setError('Poll has no options');
-          setIsLoading(false);
-          return;
-        }
-
-        // Check if poll is closed using service
-        const isClosed = voteService.isPollClosed(pollData);
-
-        // Get theme settings using service
-        const themeSettings = voteService.getThemeSettings(pollData);
-
-        setPoll(pollData);
-        setOptions(formattedOptions);
-        setPollClosed(isClosed);
-        setTheme(themeSettings);
-
-        console.log('📊 Poll loaded successfully:', {
-          id: pollData.id,
-          title: pollData.title,
-          options: formattedOptions.length,
-          closed: isClosed,
-          theme: themeSettings
-        });
-
+      if (!pollIdFromUrl) {
+        setError('Poll not found');
         setIsLoading(false);
-      } catch (err) {
-        console.error('❌ Error loading poll:', err);
-        setError('Error loading poll data');
-        setIsLoading(false);
+        return;
       }
-    };
 
-    loadPollData();
-  }, []);
+      console.log('========================================');
+      console.log('📥 LOADING POLL FOR VOTING');
+      console.log('========================================');
+
+      // Fetch poll using service
+      const result = await voteService.getPoll(pollIdFromUrl);
+
+      // ✅ CHECK: Is it a private poll access error?
+      if (!result.success) {
+        if (result.code === 'NOT_AUTHENTICATED') {
+          // User is not logged in and poll is PRIVATE
+          console.log('🔐 Private poll requires authentication');
+          
+          // Show alert and redirect to login
+          Swal.fire({
+            icon: 'warning',
+            title: 'Login Required',
+            text: 'This is a private poll. You must log in to access it.',
+            confirmButtonText: 'Go to Login',
+            confirmButtonColor: '#137fec'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = '/login'; // Redirect to login
+            }
+          });
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        if (result.code === 'EMAIL_NOT_AUTHORIZED') {
+          // User is logged in but email not in whitelist
+          console.log('❌ Email not authorized for this private poll');
+          
+          Swal.fire({
+            icon: 'error',
+            title: 'Access Denied',
+            text: 'Your email is not authorized to vote on this private poll.',
+            confirmButtonColor: '#137fec'
+          });
+          
+          setError('Access Denied');
+          setIsLoading(false);
+          return;
+        }
+
+        // Other errors
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      const pollData = result.poll;
+
+      // Format options using service
+      const formattedOptions = voteService.formatOptions(pollData);
+
+      if (!formattedOptions || formattedOptions.length === 0) {
+        setError('Poll has no options');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if poll is closed using service
+      const isClosed = voteService.isPollClosed(pollData);
+
+      // Get theme settings using service
+      const themeSettings = voteService.getThemeSettings(pollData);
+
+      setPoll(pollData);
+      setOptions(formattedOptions);
+      setPollClosed(isClosed);
+      setTheme(themeSettings);
+
+      console.log('📊 Poll loaded successfully:', {
+        id: pollData.id,
+        title: pollData.title,
+        options: formattedOptions.length,
+        closed: isClosed,
+        theme: themeSettings
+      });
+
+      setIsLoading(false);
+    } catch (err) {
+      console.error('❌ Error loading poll:', err);
+      setError('Error loading poll data');
+      setIsLoading(false);
+    }
+  };
+
+  loadPollData();
+}, []);
 
   // ✅ HANDLE OPTION SELECTION
   const handleOptionChange = (optionId) => {
