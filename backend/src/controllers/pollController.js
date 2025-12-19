@@ -83,92 +83,80 @@ const createPoll = async (req, res) => {
     }
 };
 
-// 2. GET POLL
-
-const pollModel = require('../models/pollModel');
-
-/**
- * GET /api/polls/:pollId
- * Fetch poll data with access control
- * For PRIVATE polls: Check authentication + email whitelist
- */
+// 2. GET POLL ✅ UPDATED - Added private poll access check
 const getPoll = async (req, res) => {
-  try {
-    const { pollId } = req.params;
+    try {
+        const { id } = req.params;
+        const poll = await pollModel.getPollById(id);
+        if (!poll) return res.status(404).json({ message: "Poll not found" });
 
-    // 1. Fetch poll data
-    const poll = await pollModel.getPollById(pollId);
+        const userId = req.user ? req.user.id : null;
+        const isCreator = userId === poll.creator_id;
 
-    if (!poll) {
-      return res.status(404).json({ 
-        message: "Poll not found",
-        code: "POLL_NOT_FOUND"
-      });
+        // Block drafts from public view
+        if (poll.status === 'DRAFT' && !isCreator) {
+            return res.status(403).json({ message: "This poll is not yet published." });
+        }
+
+        // ✅ NEW: Check if PRIVATE POLL - Verify email access
+        const accessType = poll.theme_settings?.access_type || 'PUBLIC';
+        
+        if (accessType === 'PRIVATE' && !isCreator) {
+            console.log('🔐 PRIVATE POLL - Checking access...');
+
+            // Check if user is authenticated
+            if (!userId) {
+                return res.status(403).json({
+                    message: "This is a private poll. You must be logged in to access it.",
+                    code: "NOT_AUTHENTICATED",
+                    requiresLogin: true
+                });
+            }
+
+            const userEmail = req.user.email;
+            const userDomain = userEmail.split('@')[1];
+            
+            // Get allowed voters and domains
+            const allowedVoters = poll.invited_emails || poll.allowed_voters || [];
+            const allowedDomains = poll.allowed_domains || [];
+
+            console.log('📧 User email:', userEmail);
+            console.log('📧 User domain:', userDomain);
+            console.log('📧 Allowed voters:', allowedVoters);
+            console.log('📧 Allowed domains:', allowedDomains);
+
+            // Check if email is in whitelist
+            const isEmailAllowed = allowedVoters.some(email => 
+                email.toLowerCase().trim() === userEmail.toLowerCase().trim()
+            );
+
+            // Check if domain is in whitelist
+            const isDomainAllowed = allowedDomains.some(domain =>
+                domain.toLowerCase().trim() === userDomain.toLowerCase().trim()
+            );
+
+            // Access granted if EITHER email OR domain is allowed
+            if (!isEmailAllowed && !isDomainAllowed) {
+                return res.status(403).json({
+                    message: "You are not authorized to access this private poll. Your email is not in the invited list.",
+                    code: "EMAIL_NOT_AUTHORIZED",
+                    userEmail: userEmail
+                });
+            }
+
+            console.log('✅ User is authorized to access this private poll');
+        }
+        // =====================================================
+
+        // Simple vote check
+        let hasVoted = false;
+        if (userId) hasVoted = await voteModel.hasUserVoted(poll.id, userId);
+
+        res.json({ ...poll, user_has_voted: hasVoted });
+    } catch (err) {
+        console.error("Get Poll Error:", err);
+        res.status(500).json({ message: "Server Error" });
     }
-
-    // ✅ 2. CHECK ACCESS FOR PRIVATE POLLS
-    if (poll.access_type === 'PRIVATE' || poll.visibility === 'PRIVATE') {
-      console.log('🔐 PRIVATE POLL - Checking access...');
-
-      // Check if user is authenticated
-      if (!req.user) {
-        return res.status(403).json({
-          message: "This is a private poll. You must be logged in to access it.",
-          code: "NOT_AUTHENTICATED",
-          requiresLogin: true
-        });
-      }
-
-      const userEmail = req.user.email;
-      const userDomain = userEmail.split('@')[1]; // Extract domain from email
-      
-      // Get allowed voters and domains
-      const allowedVoters = poll.invited_emails || poll.allowed_voters || [];
-      const allowedDomains = poll.allowed_domains || [];
-
-      console.log('📧 User email:', userEmail);
-      console.log('📧 User domain:', userDomain);
-      console.log('📧 Allowed voters:', allowedVoters);
-      console.log('📧 Allowed domains:', allowedDomains);
-
-      // Check if email is in whitelist
-      const isEmailAllowed = allowedVoters.some(email => 
-        email.toLowerCase().trim() === userEmail.toLowerCase().trim()
-      );
-
-      // Check if domain is in whitelist
-      const isDomainAllowed = allowedDomains.some(domain =>
-        domain.toLowerCase().trim() === userDomain.toLowerCase().trim()
-      );
-
-      // Access granted if EITHER email OR domain is allowed
-      if (!isEmailAllowed && !isDomainAllowed) {
-        return res.status(403).json({
-          message: "You are not authorized to access this private poll.",
-          code: "EMAIL_NOT_AUTHORIZED",
-          userEmail: userEmail
-        });
-      }
-
-      console.log('✅ User is authorized to access this private poll');
-    }
-    // =====================================================
-
-    // 3. Return poll data (hide sensitive info if needed)
-    res.status(200).json({
-      success: true,
-      poll: poll,
-      // Optionally hide email list from frontend if you want extra security
-      // poll: { ...poll, invited_emails: undefined, allowed_domains: undefined }
-    });
-
-  } catch (err) {
-    console.error('❌ Get Poll Error:', err);
-    res.status(500).json({ 
-      message: "Server Error",
-      error: err.message 
-    });
-  }
 };
 
 // 3. EDIT POLL
@@ -304,7 +292,7 @@ const getDashboard = async (req, res) => {
 module.exports = { 
     createPoll, 
     getPoll, 
-    editPoll,  // ← Changed back to editPoll
+    editPoll,
     deletePoll, 
     getDashboard 
 };

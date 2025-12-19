@@ -20,6 +20,55 @@ const submitVote = async (req, res) => {
             return res.status(404).json({ message: "Poll not found" });
         }
 
+        // ✅ NEW: 2.5. CHECK IF PRIVATE POLL - VERIFY EMAIL ACCESS (Security check)
+        const accessType = poll.theme_settings?.access_type || 'PUBLIC';
+        
+        if (accessType === 'PRIVATE') {
+            console.log('🔐 PRIVATE POLL - Verifying vote access...');
+
+            const userEmail = req.user ? req.user.email : null;
+
+            if (!userEmail) {
+                // Private polls require authentication
+                return res.status(403).json({
+                    message: "You must be logged in to vote on this private poll.",
+                    code: "NOT_AUTHENTICATED"
+                });
+            }
+
+            const userDomain = userEmail.split('@')[1];
+            
+            // Get the list of allowed voters for this poll
+            const allowedVoters = poll.invited_emails || poll.allowed_voters || [];
+            const allowedDomains = poll.allowed_domains || [];
+            
+            console.log('📧 User email:', userEmail);
+            console.log('📧 User domain:', userDomain);
+            console.log('📧 Allowed voters:', allowedVoters);
+            console.log('📧 Allowed domains:', allowedDomains);
+
+            // Check if user's email is in the whitelist
+            const isEmailAllowed = allowedVoters.some(email => 
+                email.toLowerCase().trim() === userEmail.toLowerCase().trim()
+            );
+
+            // Check if user's domain is in the whitelist
+            const isDomainAllowed = allowedDomains.some(domain =>
+                domain.toLowerCase().trim() === userDomain.toLowerCase().trim()
+            );
+
+            // Access granted if EITHER email OR domain is allowed
+            if (!isEmailAllowed && !isDomainAllowed) {
+                return res.status(403).json({
+                    message: "You are not authorized to vote on this private poll. Your email is not in the invited list.",
+                    code: "EMAIL_NOT_AUTHORIZED"
+                });
+            }
+
+            console.log('✅ Email is authorized for this private poll');
+        }
+        // =====================================================
+
         // === SECURITY FIX: Verify Option belongs to Poll ===
         // We loop through the poll's options to make sure the sent optionId exists there.
         const isValidOption = poll.poll_options.some(opt => opt.id === parseInt(optionId));
