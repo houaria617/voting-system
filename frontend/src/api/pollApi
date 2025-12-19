@@ -1,0 +1,7 @@
+import API from './axiosConfig';
+
+// Fetch polls for dashboard
+export const fetchDashboardPolls = async () => {
+  const response = await API.get('/polls/dashboard');
+  return response.data; // { count, polls }
+};

@@ -1,30 +1,27 @@
 import React, { useState } from 'react';
-import { BarChart3, Plus, Trash2 } from 'lucide-react';
+import { BarChart3, Plus, Trash2, ChevronDown } from 'lucide-react';
 import Swal from 'sweetalert2';
+import API from '../../api/axiosConfig';// here is the api import 
 import { useNavigate } from "react-router-dom";
-
+// import '../../styles/create_poll.css';
 const CreatePollPage = () => {
-  // ✅ FIXED: Changed 'question' to 'title' to match pollService expectations
-  const [title, setTitle] = useState('');
+  const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [missingoptions, setmissingoptions] = useState([false, false]);
-  const [missingTitle, setMissingTitle] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
+  const [hasExpiration, setHasExpiration] = useState(false);
+  const [expirationDate, setExpirationDate] = useState('');
+  const [missingQuestion, setMissingQuestion] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [focusedoptions, setFocusedoptions] = useState([false, false]);
-  
-  const navigate = useNavigate();
-
+  const [focuedoptions, setFocusedoptions] = useState([false, false]);
   const handleAddOption = () => {
     setOptions([...options, '']);
-    setmissingoptions([...missingoptions, false]);
-    setFocusedoptions([...focusedoptions, false]);
   };
 
   const handleRemoveOption = (index) => {
     if (options.length > 2) {
       setOptions(options.filter((_, i) => i !== index));
-      setmissingoptions(missingoptions.filter((_, i) => i !== index));
-      setFocusedoptions(focusedoptions.filter((_, i) => i !== index));
     }
   };
 
@@ -32,58 +29,49 @@ const CreatePollPage = () => {
     const newOptions = [...options];
     newOptions[index] = value;
     setOptions(newOptions);
-    
-    // Clear error when user types
-    if (value.trim() !== '') {
-      const newMissing = [...missingoptions];
-      newMissing[index] = false;
-      setmissingoptions(newMissing);
-    }
   };
-
+const navigate = useNavigate();
   const handleSubmit = async () => {
-    // ✅ FIXED: Validate title (not question)
-    if (title.trim() === '') {
-      setMissingTitle(true);
-      setmissingoptions(options.map(opt => opt.trim() === ''));
-      Swal.fire({
-        icon: "error",
-        title: "Missing Title",
-        text: "Please enter a poll title"
-      });
-      return;
+    if (question.trim() === '') {
+        setMissingQuestion(true);
+        Swal.fire({
+            icon: "error",
+            title: "Missing Question",
+            text: "Please enter a poll question"
+        });
+        return;
     }
 
     const filledOptions = options.filter(opt => opt.trim() !== '');
     if (filledOptions.length < 2) {
-      setmissingoptions(options.map(opt => opt.trim() === ''));
-      Swal.fire({
-        icon: "warning",
-        title: "Not Enough Options",
-        text: "Please provide at least 2 answer options."
-      });
-      return;
+        Swal.fire({
+            icon: "warning",
+            title: "Not Enough Options",
+            text: "Please provide at least 2 answer options."
+        });
+        return;
     }
 
-    // ✅ FIXED: Create pollData with 'title' field and include description
+    // Create poll data object
     const pollData = {
-      title: title,  // ← Changed from 'question'
-      description: '', // ← Added description field
-      options: filledOptions
+        title: question,  // Backend expects "title", not "question"
+        options: filledOptions,
+        settings: {
+            allowMultiple: allowMultipleVotes,
+            visibility: 'ALWAYS'
+        }
     };
-    
-    console.log('Poll Data:', pollData);
-    
-    // Navigate to configuration page
+
+    // Save to localStorage to pass to next page
     navigate('/configure-poll', { state: { pollData } });
-  };
+};
 
   const handleCancel = () => {
-    setTitle('');
+    setQuestion('');
     setOptions(['', '']);
-    setmissingoptions([false, false]);
-    setFocusedoptions([false, false]);
-    setMissingTitle(false);
+    setAllowMultipleVotes(false);
+    setHasExpiration(false);
+    setExpirationDate('');
   };
 
   return (
@@ -116,58 +104,61 @@ const CreatePollPage = () => {
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
         
-        {/* Header */}
-        <div style={{
-          padding: '1rem 2rem',
-          backgroundColor: '#F5F7FA',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              backgroundColor: '#007BFF',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <BarChart3 size={24} color="white" />
-            </div>
+      {/* Header */}
+<div style={{
+  padding: '1rem 2rem',
+  backgroundColor: '#F5F7FA',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'space-between',   // ⭐ This pushes items apart
+  alignItems: 'center'
+}}>
+  {/* Left side: Logo + Title */}
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem'
+  }}>
+    <div style={{
+      width: '40px',
+      height: '40px',
+      backgroundColor: '#007BFF',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <BarChart3 size={24} color="white" />
+    </div>
 
-            <span style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              color: '#111827'
-            }}>Pollify</span>
-          </div>
+    <span style={{
+      fontSize: '1.5rem',
+      fontWeight: '700',
+      color: '#111827'
+    }}>Pollify</span>
+  </div>
 
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{
-              backgroundColor: '#007BFF',
-              color: 'white',
-              padding: '0.6rem 1.2rem',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: 600,
-              transition: '0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#007BFF'}
-          >
-            Dashboard
-          </button>
-        </div>
+  {/* Right side: Dashboard button */}
+  <button
+    onClick={() => navigate('/dashboard')}
+    style={{
+      backgroundColor: '#007BFF',
+      color: 'white',
+      padding: '0.6rem 1.2rem',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '1rem',
+      fontWeight: 600,
+      transition: '0.2s'
+    }}
+    onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+    onMouseLeave={(e) => e.target.style.backgroundColor = '#007BFF'}
+  >
+    Dashboard
+  </button>
+</div>
+
 
         {/* Main Content */}
         <div style={{
@@ -217,7 +208,7 @@ const CreatePollPage = () => {
               boxSizing: 'border-box'
             }}>
               
-              {/* Poll Title */}
+              {/* Poll Question */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{
                   display: 'block',
@@ -226,50 +217,50 @@ const CreatePollPage = () => {
                   color: '#1F2937',
                   marginBottom: '0.5rem'
                 }}>
-                  Poll Title
+                  Poll Question
                 </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setTitle(val);
-                    if (val.trim() !== "") setMissingTitle(false);
-                  }}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  placeholder="What's your poll about?"
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem 1rem',
-                    fontSize: '1rem',
-                    border: missingTitle
+              <input
+                 type="text"
+                value={question}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setQuestion(val);
+                
+                  if (val.trim() !== "") setMissingQuestion(false);
+                }}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder="What's your question?"
+                style={{
+                 width: '100%',
+                 padding: '0.875rem 1rem',
+                 fontSize: '1rem',
+                
+                 border: missingQuestion
                       ? '1px solid #F87171'
                       : focused
                       ? '1px solid #007BFF'
                       : '1px solid #6b7280',
-                    boxShadow: missingTitle
+                
+                    boxShadow: missingQuestion
                       ? '0 0 0 3px rgba(239, 68, 68, 0.1)'
-                      : focused
-                      ? '0 0 0 3px rgba(0, 123, 255, 0.1)'
+                     : focused
+                     ? '0 0 0 3px rgba(0, 123, 255, 0.1)'
                       : 'none',
+                
                     borderRadius: '8px',
                     backgroundColor: '#F9FAFB',
                     color: '#1F2937',
                     outline: 'none',
                     transition: 'all 0.2s'
-                  }}
+                 }}
                 />
-                {missingTitle && (
-                  <div style={{
-                    color: '#dc2626', 
-                    fontSize: '0.875rem', 
-                    marginTop: '0.25rem',
-                    fontWeight: 500 
-                  }}>
-                    Please enter a poll title
-                  </div>
-                )}
+
+                {missingQuestion && (<div style={{color: '#dc2626', 
+                                                 fontsize: '0.875rem', 
+                                                 margintop: '0.25rem', /* 4px spacing under input */
+                                                 fontweight: 500 }}>
+                                             Please enter a poll question </div>)}
               </div>
 
               {/* Options */}
@@ -294,8 +285,14 @@ const CreatePollPage = () => {
                       <input
                         type="text"
                         value={option}
-                        onChange={(e) => handleOptionChange(index, e.target.value)}
-                        placeholder={`Option ${index + 1}`}
+                        onChange={(e) => {handleOptionChange(index, e.target.value);
+                            if(e.target.value.trim() !== ''){ setmissingoptions(prev => {
+                                const newMissing = [...prev];
+                                newMissing[index] = false;
+                                return newMissing;
+                              });}
+                        }}
+                        placeholder="Enter an answer option"
                         style={{
                           flex: 1,
                           padding: '0.875rem 1rem',
@@ -304,33 +301,31 @@ const CreatePollPage = () => {
                           backgroundColor: '#F9FAFB',
                           color: '#1F2937',
                           outline: 'none',
-                          border: missingoptions[index] 
-                            ? "1px solid #F87171" 
-                            : focusedoptions[index]
-                            ? '1px solid #007BFF' 
-                            : '1px solid #6b7280',
-                          boxShadow: missingoptions[index] 
-                            ? "0 0 0 3px rgba(239, 68, 68, 0.1)"
-                            : focusedoptions[index]
-                            ? '0 0 0 3px rgba(0, 123, 255, 0.1)' 
-                            : "none",
+                          border: missingoptions[index] ?"1px solid #F87171" : focuedoptions[index]? '1px solid #007BFF' :'1px solid #6b7280' ,
+                          boxShadow: missingoptions[index] ? "0 0 0 3px rgba(239, 68, 68, 0.1)": focuedoptions[index]? '0 0 0 3px rgba(0, 123, 255, 0.1)' : "none",
                           boxSizing: 'border-box',
                           transition: 'all 0.2s'
                         }}
-                        onFocus={() => {
-                          if (options[index].trim() !== '') {
-                            const newMissing = [...missingoptions];
-                            newMissing[index] = false;
-                            setmissingoptions(newMissing);
-                          }
-                          const newFocused = [...focusedoptions];
-                          newFocused[index] = true;
-                          setFocusedoptions(newFocused);
+                        onFocus={(e) => {
+                            if(options[index].trim() !== ''){ setmissingoptions(prev => {
+                              const newMissing = [...prev];
+                              newMissing[index] = false;
+                              return newMissing;
+                            });}
+                            setFocusedoptions(prev => {
+                              const newFocused = [...prev];
+                              newFocused[index] = true;
+                              return newFocused;
+                            });
+                         
+                          
                         }}
-                        onBlur={() => {
-                          const newFocused = [...focusedoptions];
-                          newFocused[index] = false;
-                          setFocusedoptions(newFocused);
+                        onBlur={(e) => {
+                          setFocusedoptions(prev => {
+                            const newFocused = [...prev];
+                            newFocused[index] = false;
+                            return newFocused;
+                          });
                         }}
                       />
                       <button
@@ -350,12 +345,14 @@ const CreatePollPage = () => {
                         }}
                         onMouseEnter={(e) => {
                           if (options.length > 2) {
+                            
                             e.currentTarget.style.backgroundColor = '#FEF2F2';
                             e.currentTarget.style.borderColor = '#EF4444';
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (options.length > 2) {
+                        
                             e.currentTarget.style.backgroundColor = 'white';
                             e.currentTarget.style.borderColor = '#E5E7EB';
                           }
@@ -365,6 +362,7 @@ const CreatePollPage = () => {
                       </button>
                     </div>
                   ))}
+                  {/* {&& (<div className='Error-message'> Please enter at least 2 potions.</div>)} */}
                 </div>
 
                 <button
@@ -395,6 +393,117 @@ const CreatePollPage = () => {
                   <span>Add Option</span>
                 </button>
               </div>
+
+              {/* Poll Settings */}
+              {/* <div style={{
+                borderTop: '1px solid #E5E7EB',
+                paddingTop: '1.5rem',
+                marginBottom: '1.5rem'
+              }}>
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    fontSize: '1.125rem',
+                    fontWeight: '500',
+                    color: '#1F2937',
+                    cursor: 'pointer',
+                    padding: '0.5rem 0',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#111827';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#1F2937';
+                  }}
+                >
+                  <span>Poll Settings</span>
+                  <ChevronDown 
+                    size={20}
+                    style={{
+                      transform: showSettings ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s'
+                    }}
+                  />
+                </button>
+
+                {showSettings && (
+                  <div style={{
+                    marginTop: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem'
+                  }}>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={allowMultipleVotes}
+                        onChange={(e) => setAllowMultipleVotes(e.target.checked)}
+                        style={{
+                          width: '1.25rem',
+                          height: '1.25rem',
+                          cursor: 'pointer',
+                          accentColor: '#007BFF'
+                        }}
+                      />
+                      <span style={{ color: '#1F2937' }}>Allow multiple votes</span>
+                    </label>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={hasExpiration}
+                          onChange={(e) => setHasExpiration(e.target.checked)}
+                          style={{
+                            width: '1.25rem',
+                            height: '1.25rem',
+                            cursor: 'pointer',
+                            accentColor: '#007BFF'
+                          }}
+                        />
+                        <span style={{ color: '#1F2937' }}>Set an expiration date</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={expirationDate}
+                        onChange={(e) => setExpirationDate(e.target.value)}
+                        disabled={!hasExpiration}
+                        style={{
+                          marginLeft: '2rem',
+                          padding: '0.625rem 0.875rem',
+                          fontSize: '1rem',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                          backgroundColor: '#F9FAFB',
+                          color: '#1F2937',
+                          outline: 'none',
+                          maxWidth: '320px',
+                          opacity: hasExpiration ? 1 : 0.5,
+                          cursor: hasExpiration ? 'text' : 'not-allowed',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div> */}
 
               {/* Action Buttons */}
               <div style={{
@@ -446,7 +555,7 @@ const CreatePollPage = () => {
                     e.currentTarget.style.backgroundColor = '#007BFF';
                   }}
                 >
-                  Continue to Configuration
+                  Create Poll
                 </button>
               </div>
 
