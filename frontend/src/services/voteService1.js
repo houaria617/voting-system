@@ -1,18 +1,9 @@
 // services/voteService.js
-import axios from 'axios';
-
-// Create axios instance with base URL pointing to backend
-const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+import API from '../api/axiosConfig';
 
 class VoteService {
   /**
-   * Fetch poll data for voting
+   * Fetch poll data for voting (with auth via axiosConfig)
    * @param {string} pollId - Poll ID
    * @returns {Promise<Object>} Poll data with success flag
    */
@@ -24,6 +15,7 @@ class VoteService {
 
       console.log('📥 Fetching poll for voting:', pollId);
 
+      // ✅ USE API FROM axiosConfig - it automatically sends auth token
       const response = await API.get(`/polls/${pollId}`);
       
       const pollData = response.data.poll || response.data;
@@ -43,6 +35,17 @@ class VoteService {
       };
     } catch (err) {
       console.error('❌ Error fetching poll:', err.message);
+      
+      // ✅ Handle private poll access errors
+      if (err.response?.status === 403) {
+        return {
+          success: false,
+          error: 'Access Denied',
+          code: err.response.data?.code || 'FORBIDDEN',
+          message: err.response.data?.message || 'You are not authorized to access this poll',
+          requiresLogin: err.response.data?.code === 'NOT_AUTHENTICATED'
+        };
+      }
       
       if (err.response?.status === 404) {
         return {
@@ -126,21 +129,15 @@ class VoteService {
 
       console.log('🗳️ Submitting vote for poll:', pollId, 'option(s):', optionId);
 
-      // ✅ FIX: Send as SINGLE NUMBER, not array
+      // ✅ FIX: Extract first option if array (for multiple choice support)
       const finalOptionId = Array.isArray(optionId) ? optionId[0] : optionId;
 
       console.log('📤 Sending optionId as:', finalOptionId, 'Type:', typeof finalOptionId);
 
-      const token = localStorage.getItem('token');
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
+      // ✅ USE API FROM axiosConfig - it automatically sends auth token
       const response = await API.post(
         `/polls/${pollId}/vote`,
-        { optionId: finalOptionId },  // ✅ Single number!
-        { headers }
+        { optionId: finalOptionId }
       );
 
       console.log('✅ Vote successful:', response.data);
@@ -202,6 +199,7 @@ class VoteService {
       };
     }
   }
+
   /**
    * Format date to readable string
    * @param {string} dateString - Date string
