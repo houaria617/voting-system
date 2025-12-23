@@ -1,122 +1,124 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AlertCircle, CheckCircle, Clock, Lock } from 'lucide-react';
+import Swal from 'sweetalert2';
 import voteService from '../services/voteService1';
 import '../styles/pollVoting.css';
 
 const PollVotingPage = () => {
-  // ✅ STATE HOOKS
+  const navigate = useNavigate();
+  const { pollId } = useParams();
+
+  // STATE MANAGEMENT
   const [poll, setPoll] = useState(null);
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState([]);
+  
+  // Loading & Error States
   const [isLoading, setIsLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Poll Status States
+  const [hasVoted, setHasVoted] = useState(false);
   const [pollClosed, setPollClosed] = useState(false);
+  const [requiresLogin, setRequiresLogin] = useState(false);
+  
+  // Theme & UI
   const [theme, setTheme] = useState(null);
 
-  // ✅ GET POLL ID FROM URL AND LOAD DATA
-  // Updated PollVotingPage with access check
+  // Load Poll Data
+  useEffect(() => {
+    if (pollId) {
+      loadPoll();
+    }
+  }, [pollId]);
 
-useEffect(() => {
-  const loadPollData = async () => {
+  const loadPoll = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
-      // Extract poll ID from URL
-      const pathParts = window.location.pathname.split('/');
-      const pollIdFromUrl = pathParts[pathParts.length - 1];
-
-      if (!pollIdFromUrl) {
+      if (!pollId) {
         setError('Poll not found');
         setIsLoading(false);
         return;
       }
 
-      console.log('========================================');
-      console.log('📥 LOADING POLL FOR VOTING');
-      console.log('========================================');
+      console.log('📥 Loading poll:', pollId);
 
-      // Fetch poll using service
-      const result = await voteService.getPoll(pollIdFromUrl);
+      const result = await voteService.getPoll(pollId);
 
-      // ✅ CHECK: Is it a private poll access error?
+      // Check if private poll requires login
       if (!result.success) {
-        if (result.code === 'NOT_AUTHENTICATED') {
-          // User is not logged in and poll is PRIVATE
-          console.log('🔐 Private poll requires authentication');
+        console.error('❌ Poll load failed:', result);
+
+        // Private poll - not authenticated
+        if (result.code === 'NOT_AUTHENTICATED' || result.requiresLogin) {
+          console.log('🔐 Private poll - Redirecting to login');
           
-          // Show alert and redirect to login
-          Swal.fire({
-            icon: 'warning',
-            title: 'Login Required',
-            text: 'This is a private poll. You must log in to access it.',
-            confirmButtonText: 'Go to Login',
-            confirmButtonColor: '#137fec'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              window.location.href = '/login'; // Redirect to login
-            }
+          // Store poll ID in localStorage
+          localStorage.setItem('pendingPollId', pollId);
+          
+          // Redirect to voter login with poll ID
+          navigate('/voter-login', { 
+            state: { pollId },
+            replace: true 
           });
-          
           setIsLoading(false);
           return;
         }
-        
+
+        // Email not authorized
         if (result.code === 'EMAIL_NOT_AUTHORIZED') {
-          // User is logged in but email not in whitelist
-          console.log('❌ Email not authorized for this private poll');
-          
-          Swal.fire({
-            icon: 'error',
-            title: 'Access Denied',
-            text: 'Your email is not authorized to vote on this private poll.',
-            confirmButtonColor: '#137fec'
-          });
-          
-          setError('Access Denied');
+          console.log('❌ Email not authorized');
+          setError('EMAIL_NOT_AUTHORIZED');
+          setIsLoading(false);
+          return;
+        }
+
+        // Poll not found
+        if (result.error === 'Poll not found') {
+          setError('Poll not found');
           setIsLoading(false);
           return;
         }
 
         // Other errors
-        setError(result.error);
+        setError(result.error || 'Failed to load poll');
         setIsLoading(false);
         return;
       }
 
       const pollData = result.poll;
+      console.log('✅ Poll loaded:', pollData.id);
 
-      // Format options using service
+      // Format options
       const formattedOptions = voteService.formatOptions(pollData);
-
       if (!formattedOptions || formattedOptions.length === 0) {
         setError('Poll has no options');
         setIsLoading(false);
         return;
       }
 
-      // Check if poll is closed using service
+      // Check poll status
       const isClosed = voteService.isPollClosed(pollData);
-
-      // Get theme settings using service
       const themeSettings = voteService.getThemeSettings(pollData);
 
+      // Check if already voted
+      if (pollData.user_has_voted) {
+        console.log('⚠️ User already voted on this poll');
+        setHasVoted(true);
+      }
+
+      // Set all poll data
       setPoll(pollData);
       setOptions(formattedOptions);
       setPollClosed(isClosed);
       setTheme(themeSettings);
-
-      console.log('📊 Poll loaded successfully:', {
-        id: pollData.id,
-        title: pollData.title,
-        options: formattedOptions.length,
-        closed: isClosed,
-        theme: themeSettings
-      });
-
       setIsLoading(false);
+
     } catch (err) {
       console.error('❌ Error loading poll:', err);
       setError('Error loading poll data');
@@ -124,11 +126,12 @@ useEffect(() => {
     }
   };
 
-  loadPollData();
-}, []);
-
-  // ✅ HANDLE OPTION SELECTION
+  // Handle option selection
   const handleOptionChange = (optionId) => {
+    if (hasVoted || pollClosed || isVoting) {
+      return;
+    }
+
     console.log('🔘 Selected option:', optionId);
 
     if (poll?.allow_multiple_choices) {
@@ -139,74 +142,122 @@ useEffect(() => {
         return [...prev, optionId];
       });
     } else {
-      if (selectedOption === optionId) {
-        setSelectedOption(null);
-      } else {
-        setSelectedOption(optionId);
-      }
+      setSelectedOption(selectedOption === optionId ? null : optionId);
     }
   };
 
-  // ✅ SUBMIT VOTE
+  // Submit vote
   const handleSubmitVote = async () => {
-    const pathParts = window.location.pathname.split('/');
-    const pollIdFromUrl = pathParts[pathParts.length - 1];
-    const optionsToSubmit = poll?.allow_multiple_choices ? selectedOptions : selectedOption;
+    if (hasVoted) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Already Voted',
+        text: 'You have already voted on this poll.',
+        confirmButtonColor: '#137fec'
+      });
+      return;
+    }
 
+    // Validate selection
+    const optionsToSubmit = poll?.allow_multiple_choices ? selectedOptions : selectedOption;
     if (!optionsToSubmit || (Array.isArray(optionsToSubmit) && optionsToSubmit.length === 0)) {
-      alert('Please select an option before voting');
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Option Selected',
+        text: 'Please select an option before voting.',
+        confirmButtonColor: '#137fec'
+      });
       return;
     }
 
     setIsVoting(true);
 
     try {
-      console.log('🗳️ Submitting vote:', optionsToSubmit);
-
-      // Use service to submit vote
-      const result = await voteService.submitVote(pollIdFromUrl, optionsToSubmit);
+      console.log('🗳️ Submitting vote...');
+      const result = await voteService.submitVote(pollId, optionsToSubmit);
 
       if (!result.success) {
+        console.error('❌ Vote failed:', result);
+
+        // Already voted
         if (result.statusCode === 403) {
-          // Already voted
           setHasVoted(true);
+          Swal.fire({
+            icon: 'info',
+            title: 'Already Voted',
+            text: 'You have already voted on this poll.',
+            confirmButtonColor: '#137fec'
+          });
+        } 
+        // Not authenticated
+        else if (result.code === 'NOT_AUTHENTICATED') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Login Required',
+            text: 'You must be logged in to vote on this private poll.',
+            confirmButtonColor: '#137fec',
+            confirmButtonText: 'Go to Login'
+          }).then(() => {
+            localStorage.setItem('pendingPollId', pollId);
+            navigate('/voter-login', { state: { pollId } });
+          });
         }
-        alert(result.message || result.error);
+        // Email not authorized
+        else if (result.code === 'EMAIL_NOT_AUTHORIZED') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Access Denied',
+            text: 'Your email is not authorized to vote on this private poll.',
+            confirmButtonColor: '#137fec'
+          });
+        }
+        else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Vote Failed',
+            text: result.message || 'Failed to submit vote. Please try again.',
+            confirmButtonColor: '#137fec'
+          });
+        }
         setIsVoting(false);
         return;
       }
 
-      // ✅ SUCCESS
+      // Success
+      console.log('✅ Vote submitted successfully');
       setHasVoted(true);
-      alert('Thank you! Your vote has been recorded successfully');
-      console.log('✅ Vote successful:', result.data);
-    } finally {
+      setSelectedOption(null);
+      setSelectedOptions([]);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thank You!',
+        text: 'Your vote has been recorded successfully.',
+        confirmButtonColor: '#137fec'
+      });
+
+    } catch (err) {
+      console.error('❌ Vote error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occurred. Please try again.',
+        confirmButtonColor: '#137fec'
+      });
       setIsVoting(false);
     }
   };
 
-  // ✅ ACCESS DENIED PAGE
-  if (error === 'Poll not found') {
-    return (
-      <div className="access-denied-page">
-        <div className="access-denied-card">
-          <AlertCircle className="access-denied-icon" />
-          <h1 className="access-denied-title">Access Denied</h1>
-          <p className="access-denied-text">
-            The poll you're looking for doesn't exist or you don't have access to it.
-          </p>
-          <button
-            onClick={() => window.location.href = '/dashboard'}
-            className="access-denied-btn"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Get font family
+  const getFontFamily = () => {
+    if (!theme) return "'Inter', sans-serif";
+    if (theme.fontStyle === 'roboto') return "'Roboto', sans-serif";
+    if (theme.fontStyle === 'poppins') return "'Poppins', sans-serif";
+    if (theme.fontStyle === 'playfair') return "'Playfair Display', serif";
+    return "'Inter', sans-serif";
+  };
 
-  // ✅ LOADING STATE
+  // LOADING STATE
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -218,7 +269,81 @@ useEffect(() => {
     );
   }
 
-  // ✅ POLL NOT LOADED
+  // REQUIRES LOGIN
+  if (requiresLogin) {
+    return (
+      <div className="access-denied-page">
+        <div className="access-denied-card">
+          <Lock className="access-denied-icon" style={{ color: '#f59e0b', width: '60px', height: '60px' }} />
+          <h1 className="access-denied-title">🔐 Private Poll</h1>
+          <p className="access-denied-text">
+            This is a private poll. You must log in with your authorized email to access and vote.
+          </p>
+          <button
+            onClick={() => {
+              localStorage.setItem('pendingPollId', pollId);
+              navigate('/voter-login', { state: { pollId } });
+            }}
+            className="access-denied-btn"
+            style={{ backgroundColor: '#137fec' }}
+          >
+            Login to Vote
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="access-denied-btn"
+            style={{ backgroundColor: '#6b7280', marginTop: '10px' }}
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // EMAIL NOT AUTHORIZED
+  if (error === 'EMAIL_NOT_AUTHORIZED') {
+    return (
+      <div className="access-denied-page">
+        <div className="access-denied-card">
+          <AlertCircle className="access-denied-icon" style={{ color: '#ef4444', width: '60px', height: '60px' }} />
+          <h1 className="access-denied-title">❌ Access Denied</h1>
+          <p className="access-denied-text">
+            Your email is not authorized to vote on this private poll. Please contact the poll creator.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="access-denied-btn"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // POLL NOT FOUND
+  if (error === 'Poll not found') {
+    return (
+      <div className="access-denied-page">
+        <div className="access-denied-card">
+          <AlertCircle className="access-denied-icon" style={{ color: '#ef4444', width: '60px', height: '60px' }} />
+          <h1 className="access-denied-title">Poll Not Found</h1>
+          <p className="access-denied-text">
+            The poll you're looking for doesn't exist or has been deleted.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="access-denied-btn"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // POLL DATA MISSING
   if (!poll || !theme) {
     return (
       <div className="loading-container">
@@ -230,21 +355,58 @@ useEffect(() => {
     );
   }
 
-  // ✅ GET FONT FAMILY FROM THEME
-  const getFontFamily = () => {
-    if (theme.fontStyle === 'roboto') return "'Roboto', sans-serif";
-    if (theme.fontStyle === 'poppins') return "'Poppins', sans-serif";
-    if (theme.fontStyle === 'playfair') return "'Playfair Display', serif";
-    return "'Inter', sans-serif";
-  };
+  // ALREADY VOTED
+  if (hasVoted) {
+    return (
+      <div 
+        className="voting-page-container"
+        style={{ fontFamily: getFontFamily() }}
+      >
+        <div className="voting-wrapper">
+          <div className="access-denied-page" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center' }}>
+            <div className="access-denied-card" style={{ width: '100%' }}>
+              <CheckCircle className="access-denied-icon" style={{ color: '#10b981', width: '60px', height: '60px' }} />
+              <h1 className="access-denied-title">Thank You!</h1>
+              <p className="access-denied-text">
+                You have already voted on this poll.
+              </p>
+              <div style={{ 
+                marginTop: '2rem', 
+                padding: '1.5rem', 
+                backgroundColor: `${theme.primaryColor}10`,
+                borderRadius: '0.75rem',
+                borderLeft: `4px solid ${theme.primaryColor}`
+              }}>
+                <h3 style={{ color: theme.primaryColor, marginTop: 0 }}>Poll Information</h3>
+                <p style={{ margin: '0.5rem 0' }}>
+                  <strong>Total Options:</strong> {options.length}
+                </p>
+                <p style={{ margin: '0.5rem 0' }}>
+                  <strong>Poll Type:</strong> {poll.allow_multiple_choices ? 'Multiple Choice' : 'Single Choice'}
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/')}
+                className="access-denied-btn"
+                style={{ marginTop: '1.5rem' }}
+              >
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // MAIN VOTING PAGE
   return (
     <div 
       className="voting-page-container"
       style={{ fontFamily: getFontFamily() }}
     >
       <div className="voting-wrapper">
-        {/* ✅ POLL HEADER */}
+        {/* POLL HEADER */}
         <div className="voting-header" style={{ borderLeftColor: theme.primaryColor }}>
           <h1 className="voting-title" style={{ color: theme.primaryColor }}>
             {poll.title}
@@ -253,7 +415,7 @@ useEffect(() => {
             <p className="voting-description">{poll.description}</p>
           )}
 
-          {/* ✅ POLL INFO STATS */}
+          {/* POLL INFO */}
           <div 
             className="voting-info-box"
             style={{ 
@@ -262,9 +424,6 @@ useEffect(() => {
             }}
           >
             <div className="voting-info-content">
-              <div className="voting-info-item">
-                <strong style={{ color: theme.primaryColor }}>Poll ID:</strong> {poll.id}
-              </div>
               <div className="voting-info-item">
                 <strong style={{ color: theme.primaryColor }}>Options:</strong> {options.length}
               </div>
@@ -281,7 +440,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* ✅ POLL CLOSED MESSAGE */}
+        {/* POLL CLOSED MESSAGE */}
         {pollClosed && (
           <div className="alert-message alert-closed">
             <AlertCircle className="alert-icon" />
@@ -292,22 +451,11 @@ useEffect(() => {
           </div>
         )}
 
-        {/* ✅ ALREADY VOTED MESSAGE */}
-        {hasVoted && (
-          <div className="alert-message alert-voted">
-            <CheckCircle className="alert-icon" />
-            <div>
-              <span className="alert-title alert-voted-text">Thank You!</span>
-              <span className="alert-voted-text"> - You have already voted on this poll</span>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ VOTING CARD */}
+        {/* VOTING CARD */}
         <div className="voting-card">
           <h2 className="voting-card-title">Cast Your Vote</h2>
 
-          {/* ✅ OPTIONS */}
+          {/* OPTIONS */}
           <div className="voting-options-container">
             {options.map((option, idx) => {
               const optionId = option.id || idx + 1;
@@ -318,8 +466,8 @@ useEffect(() => {
               return (
                 <label
                   key={optionId}
-                  className={`voting-option ${isSelected ? 'selected' : ''} ${hasVoted || pollClosed ? 'disabled' : ''}`}
-                  onClick={() => !hasVoted && !pollClosed && handleOptionChange(optionId)}
+                  className={`voting-option ${isSelected ? 'selected' : ''} ${pollClosed || isVoting ? 'disabled' : ''}`}
+                  onClick={() => !pollClosed && !isVoting && handleOptionChange(optionId)}
                   style={isSelected ? {
                     borderColor: theme.primaryColor,
                     backgroundColor: `${theme.primaryColor}15`,
@@ -330,7 +478,7 @@ useEffect(() => {
                     type={poll.allow_multiple_choices ? 'checkbox' : 'radio'}
                     checked={isSelected}
                     onChange={() => {}}
-                    disabled={hasVoted || pollClosed}
+                    disabled={pollClosed || isVoting}
                     style={{ accentColor: theme.primaryColor }}
                   />
                   <span 
@@ -344,20 +492,22 @@ useEffect(() => {
             })}
           </div>
 
-          {/* ✅ SUBMIT BUTTON */}
+          {/* SUBMIT BUTTON */}
           <button
             onClick={handleSubmitVote}
-            disabled={hasVoted || pollClosed || isVoting}
+            disabled={pollClosed || isVoting || (!selectedOption && !selectedOptions.length)}
             className="voting-submit-btn"
             style={{ 
-              backgroundColor: hasVoted || pollClosed ? '#d1d5db' : theme.primaryColor
+              backgroundColor: pollClosed ? '#d1d5db' : theme.primaryColor,
+              opacity: (pollClosed || isVoting || (!selectedOption && !selectedOptions.length)) ? 0.6 : 1,
+              cursor: (pollClosed || isVoting || (!selectedOption && !selectedOptions.length)) ? 'not-allowed' : 'pointer'
             }}
           >
-            {isVoting ? '⏳ Submitting...' : hasVoted ? '✅ Already Voted' : pollClosed ? '❌ Poll Closed' : 'Submit Vote'}
+            {isVoting ? '⏳ Submitting...' : pollClosed ? '❌ Poll Closed' : 'Submit Vote'}
           </button>
         </div>
 
-        {/* ✅ SCHEDULE INFO - BOTTOM */}
+        {/* SCHEDULE INFO */}
         <div 
           className="schedule-section"
           style={{ borderTopColor: theme.primaryColor }}

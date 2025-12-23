@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const requestIp = require('request-ip');
 const pollModel = require('../models/pollModel');
 const userModel = require('../models/userModel');
 const voteModel = require('../models/voteModel');
@@ -83,7 +85,7 @@ const createPoll = async (req, res) => {
     }
 };
 
-// 2. GET POLL ✅ UPDATED - Added private poll access check
+// 2. GET POLL ✅ FIXED - Check both user_id AND ip_hash for "hasVoted"
 const getPoll = async (req, res) => {
     try {
         const { id } = req.params;
@@ -105,7 +107,8 @@ const getPoll = async (req, res) => {
             console.log('🔐 PRIVATE POLL - Checking access...');
 
             // Check if user is authenticated
-            if (!userId) {
+            if (!userId || !req.user?.email) {
+                console.log('❌ No user or email found');
                 return res.status(403).json({
                     message: "This is a private poll. You must be logged in to access it.",
                     code: "NOT_AUTHENTICATED",
@@ -117,7 +120,7 @@ const getPoll = async (req, res) => {
             const userDomain = userEmail.split('@')[1];
             
             // Get allowed voters and domains
-            const allowedVoters = poll.invited_emails || poll.allowed_voters || [];
+            const allowedVoters = poll.allowed_voters || [];
             const allowedDomains = poll.allowed_domains || [];
 
             console.log('📧 User email:', userEmail);
@@ -148,9 +151,21 @@ const getPoll = async (req, res) => {
         }
         // =====================================================
 
-        // Simple vote check
+        // ✅ FIXED: Check if user already voted (for both logged-in users AND guests)
         let hasVoted = false;
-        if (userId) hasVoted = await voteModel.hasUserVoted(poll.id, userId);
+
+        // Case 1: Logged-in user - check by user_id
+        if (userId) {
+            hasVoted = await voteModel.hasUserVoted(poll.id, userId);
+            console.log(`🔍 Private Poll User Check - Poll ID: ${id}, User ID: ${userId}, hasVoted: ${hasVoted}`);
+        } 
+        // Case 2: Guest user - check by IP hash
+        else {
+            const clientIp = requestIp.getClientIp(req);
+            const ipHash = crypto.createHash('sha256').update(clientIp || 'unknown').digest('hex');
+            hasVoted = await voteModel.hasIpVoted(poll.id, ipHash);
+            console.log(`🔍 Public Poll IP Check - Poll ID: ${id}, IP Hash: ${ipHash.substring(0, 8)}..., hasVoted: ${hasVoted}`);
+        }
 
         res.json({ ...poll, user_has_voted: hasVoted });
     } catch (err) {

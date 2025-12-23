@@ -5,6 +5,7 @@ import TabNavigation from "../../components/ConfigurePoll/TabNavigation";
 import MainContent from "../../components/ConfigurePoll/MainContent";
 import BottomBar from "../../components/ConfigurePoll/BottomBar";
 import pollService from "../../services/pollService";
+import useFormValidation from "../../hooks/useFormValidation";
 import Swal from "sweetalert2";
 import "../../styles/ConfigurePoll.css";
 
@@ -44,6 +45,13 @@ const ConfigurePollPage = () => {
     selectionLimit: 1,
     minSelectionLimit: 1
   });
+
+  // Initialize validation hook
+  const { tabErrors, isTabValid, isFormValid, getTabErrors } = useFormValidation(
+    pollDataState, 
+    configData,
+    isEditing
+  );
 
   const formatDateForInput = (isoString) => {
     if (!isoString) return "";
@@ -171,65 +179,21 @@ const ConfigurePollPage = () => {
   const savePoll = async () => {
     console.log('💾 Saving poll...');
 
-    // Validate poll title
-    if (!pollDataState.title || pollDataState.title.trim() === '') {
+    // Final validation check
+    if (!isFormValid()) {
+      const allErrors = [];
+      Object.entries(tabErrors).forEach(([tab, errors]) => {
+        if (errors.length > 0) {
+          allErrors.push(`<strong>${tab}:</strong> ${errors.map(e => e.message).join(', ')}`);
+        }
+      });
+
       Swal.fire({
         icon: 'error',
-        title: 'Missing Poll Question',
-        text: 'Please enter a poll question.',
+        title: 'Validation Errors',
+        html: `Please fix the following issues:<br/><br/>${allErrors.join('<br/>')}`,
         confirmButtonColor: '#137fec'
       });
-      setActiveTab('General');
-      return;
-    }
-
-    // Validate options
-    const validOptions = pollDataState.options.filter(opt => opt && opt.trim() !== '');
-    if (validOptions.length < 2) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Not Enough Options',
-        text: 'Please add at least 2 poll options.',
-        confirmButtonColor: '#137fec'
-      });
-      setActiveTab('General');
-      return;
-    }
-
-    // Validate dates
-    if (!configData.startDate || configData.startDate.trim() === '') {
-      Swal.fire({
-        icon: 'error',
-        title: 'Missing Start Date',
-        text: 'Please set a start date in the Schedule tab.',
-        confirmButtonColor: '#137fec'
-      });
-      setActiveTab('Schedule');
-      return;
-    }
-
-    if (!configData.closeDate || configData.closeDate.trim() === '') {
-      Swal.fire({
-        icon: 'error',
-        title: 'Missing Close Date',
-        text: 'Please set a close date in the Schedule tab.',
-        confirmButtonColor: '#137fec'
-      });
-      setActiveTab('Schedule');
-      return;
-    }
-
-    const startDate = new Date(configData.startDate);
-    const closeDate = new Date(configData.closeDate);
-
-    if (startDate >= closeDate) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Date Range',
-        text: 'The start date must be before the close date.',
-        confirmButtonColor: '#137fec'
-      });
-      setActiveTab('Schedule');
       return;
     }
 
@@ -273,7 +237,7 @@ const ConfigurePollPage = () => {
             startDate: configData.startDate,
             closeDate: configData.closeDate
           },
-          status: 'ACTIVE' // Publish when saving
+          status: 'ACTIVE'
         };
 
         result = await pollService.updatePoll(pollId, updateData);
@@ -322,6 +286,8 @@ const ConfigurePollPage = () => {
         setActiveTab={setActiveTab}
         visitedTabs={visitedTabs}
         configData={configData}
+        tabErrors={tabErrors}
+        isTabValid={isTabValid}
       />
       
       <MainContent
@@ -332,20 +298,26 @@ const ConfigurePollPage = () => {
         pollData={pollDataState}
         setPollData={setPollDataState}
         isEditing={isEditing}
+        tabErrors={tabErrors}
+        getTabErrors={getTabErrors}
       />
       
-   <BottomBar
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  visitedTabs={visitedTabs}
-  markTabAsVisited={markTabAsVisited}
-  onSave={savePoll}
-  isSaving={isSaving}
-  pollData={pollDataState}        // ← ADD THIS
-  configData={configData}          // ← ADD THIS
-  isEditing={isEditing}
-  pollId={pollId}
-/>
+      <BottomBar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        visitedTabs={visitedTabs}
+        markTabAsVisited={markTabAsVisited}
+        onSave={savePoll}
+        isSaving={isSaving}
+        pollData={pollDataState}
+        configData={configData}
+        isEditing={isEditing}
+        pollId={pollId}
+        tabErrors={tabErrors}
+        isTabValid={isTabValid}
+        isFormValid={isFormValid}
+        getTabErrors={getTabErrors}
+      />
     </div>
   );
 };

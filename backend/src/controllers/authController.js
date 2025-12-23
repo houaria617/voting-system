@@ -22,10 +22,16 @@ const register = async (req, res) => {
         const validRole = role === 'ADMIN' ? 'ADMIN' : 'VOTER';
         const newUser = await userModel.createUser(name, email, passwordHash, validRole);
 
-        const token = generateToken(newUser.id, newUser.role);
+        console.log('🔐 Generating token for new user:', newUser.id, newUser.email, newUser.role);
+        
+        // ✅ FIXED: Pass all three parameters in correct order
+        const token = generateToken(newUser.id, newUser.email, newUser.role);
+        
+        console.log('✅ Token generated successfully');
+        
         res.status(201).json({ token, user: newUser });
     } catch (err) {
-        console.error(err);
+        console.error('❌ Register error:', err.message);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -42,10 +48,25 @@ const login = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid Credential" });
         }
-        const token = generateToken(user.id, user.role);
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        
+        console.log('🔐 Generating token for user:', user.id, user.email, user.role);
+        
+        // ✅ FIXED: Pass all three parameters in correct order
+        const token = generateToken(user.id, user.email, user.role);
+        
+        console.log('✅ Token generated successfully');
+        
+        res.json({ 
+            token, 
+            user: { 
+                id: user.id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role 
+            } 
+        });
     } catch (err) {
-        console.error(err);
+        console.error('❌ Login error:', err.message);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -78,7 +99,6 @@ const forgotPassword = async (req, res) => {
         await userModel.saveResetToken(user.id, resetToken);
 
         // 3. Prepare Email Content
-        // Note: In a real app, this URL points to your Frontend (e.g., localhost:3000)
         const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
 
         const emailSubject = "Password Reset Request";

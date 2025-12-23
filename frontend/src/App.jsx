@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Plus, Trash2 } from "lucide-react";
 import CreatePollPage from './pages/createPoll/createPoll';
 import ConfigurePollPage from './pages/configurePoll/ConfigurePoll';
 import './styles/index.css';
@@ -13,9 +12,10 @@ import Signup from './pages/Signup/Signup';
 import DashboardPage from './pages/DashboardPage';
 import PollPreviewPage from './pages/PollPreviewPage';
 import VoterPage from './pages/PollVotePage'; 
-import authService from './services/authService'; // Add this import
+import VoterLogin from './pages/Login/voterlogin'; // ✅ ADD THIS
+import authService from './services/authService';
 
-// Protected Route Component
+// Protected Route for ADMIN
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
   return isAuthenticated ? children : <Navigate to="/login" replace />;
@@ -31,8 +31,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public pages - no auth required */}
+        {/* ========== HOME & AUTH PAGES ========== */}
         <Route path="/" element={<Home />} />
+        
+        {/* ADMIN LOGIN */}
         <Route 
           path="/login" 
           element={
@@ -41,6 +43,8 @@ function App() {
             </PublicRoute>
           } 
         />
+        
+        {/* ADMIN SIGNUP */}
         <Route 
           path="/Signup" 
           element={
@@ -50,7 +54,10 @@ function App() {
           } 
         />
 
-        {/* Protected pages - require login */}
+        {/* ✅ VOTER LOGIN (NEW) */}
+        <Route path="/voter-login" element={<VoterLogin />} />
+
+        {/* ========== ADMIN PAGES (PROTECTED) ========== */}
         <Route 
           path="/dashboard" 
           element={
@@ -76,14 +83,14 @@ function App() {
           } 
         />
 
-        {/* Public poll pages - no login required */}
+        {/* ========== PUBLIC POLL PAGES ========== */}
         <Route path="/poll/:pollId" element={<PollLandingPage />} />
         <Route path="/vote/:pollId" element={<VoterPage />} />
         
-        {/* Share pages */}
+        {/* ========== SHARE PAGES ========== */}
         <Route path="/share-poll/:pollId?" element={<SharePoll />} />
 
-        {/* 404 Catch-all */}
+        {/* ========== 404 ========== */}
         <Route path="*" element={
           <div style={{
             display: 'flex',
@@ -95,7 +102,7 @@ function App() {
           }}>
             <h1 style={{ fontSize: '4rem', margin: 0 }}>404</h1>
             <p style={{ fontSize: '1.5rem', color: '#6b7280' }}>Page Not Found</p>
-            <a href="/dashboard" style={{
+            <a href="/" style={{
               padding: '0.75rem 1.5rem',
               backgroundColor: '#137fec',
               color: 'white',
@@ -103,7 +110,7 @@ function App() {
               borderRadius: '8px',
               fontWeight: '600'
             }}>
-              Go to Dashboard
+              Go Home
             </a>
           </div>
         } />

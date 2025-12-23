@@ -1,30 +1,48 @@
 import axios from 'axios';
 
+// Create axios instance
 const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
-    withCredentials: true
+  baseURL: 'http://localhost:5000/api', // Your backend URL
+  timeout: 10000,
 });
 
-// Automatically add token to every request
-API.interceptors.request.use((config) => {
+// ✅ ADD TOKEN TO EVERY REQUEST
+API.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage
     const token = localStorage.getItem('token');
+    
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Add token to Authorization header
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('✅ Token added to request:', token.substring(0, 20) + '...');
+    } else {
+      console.log('⚠️ No token found in localStorage');
     }
+    
     return config;
-});
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-// Handle errors globally
+// ✅ HANDLE RESPONSE ERRORS
 API.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // If 401 Unauthorized, redirect to login
+    if (error.response?.status === 401) {
+      console.log('🔐 Token expired, redirecting to login');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/voter-login';
     }
+    
+    return Promise.reject(error);
+  }
 );
 
 export default API;

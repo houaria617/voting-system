@@ -1,8 +1,4 @@
-
-
-
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 
 const MainContent = ({
   activeTab,
@@ -11,13 +7,16 @@ const MainContent = ({
   setConfigData,
   pollData,
   setPollData,
-  isEditing
+  isEditing,
+  tabErrors,
+  getTabErrors
 }) => {
   console.log('MainContent RECEIVED:', pollData);
   
   const [questionTitle, setQuestionTitle] = useState(pollData?.title || '');
   const [questionDesc, setQuestionDesc] = useState(pollData?.description || '');
   const [options, setOptions] = useState(pollData?.options || ['', '']);
+  const [touched, setTouched] = useState({});
 
   useEffect(() => {
     setPollData({
@@ -56,6 +55,16 @@ const MainContent = ({
   const bgInputRef = useRef(null);
   const [urlErrors, setUrlErrors] = useState({ logo: false, background: false });
   const [isValidating, setIsValidating] = useState({ logo: false, background: false });
+
+  // Get current tab errors
+  const currentTabErrors = getTabErrors(activeTab);
+  const hasFieldError = (fieldName) => {
+    return currentTabErrors.some(err => err.field === fieldName);
+  };
+  const getFieldError = (fieldName) => {
+    const error = currentTabErrors.find(err => err.field === fieldName);
+    return error ? error.message : null;
+  };
 
   const triggerFileUpload = (ref) => {
     ref?.current?.click();
@@ -175,7 +184,7 @@ const MainContent = ({
     }
   };
 
-    const themes = [
+  const themes = [
     { id: "corporate", name: "Corporate", image: "🏢", description: "Professional and clean design for business polls" },
     { id: "modern", name: "Modern", image: "✨", description: "Sleek and contemporary style" },
     { id: "colorful", name: "Colorful", image: "🎨", description: "Vibrant and eye-catching design" },
@@ -184,10 +193,46 @@ const MainContent = ({
     { id: "nature", name: "Nature", image: "🌿", description: "Earthy tones and natural feel" }
   ];
 
+  // Error Alert Component
+  const ErrorAlert = ({ errors }) => {
+    if (!errors || errors.length === 0) return null;
+    
+    return (
+      <div style={{
+        padding: '1rem',
+        backgroundColor: '#fef2f2',
+        border: '2px solid #fecaca',
+        borderRadius: '0.5rem',
+        marginBottom: '1.5rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, marginBottom: '0.5rem', color: '#991b1b', fontSize: '1rem', fontWeight: '600' }}>
+              Please Fix the Following Errors:
+            </h3>
+            <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#991b1b', fontSize: '0.875rem', lineHeight: '1.6' }}>
+              {errors.map((error, idx) => (
+                <li key={idx}><strong>{error.message}</strong></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main className="config-main-content">
       {activeTab === "General" && (
         <>
+          {/* Show validation errors at top of tab */}
+          <ErrorAlert errors={currentTabErrors} />
+
           {/* Edit Mode Warning Banner */}
           {isEditing && (
             <div style={{
@@ -240,16 +285,39 @@ const MainContent = ({
             </h2>
             
             <div className="config-form-group" style={{marginBottom: '1.5rem'}}>
-              <label className="config-form-label">Poll Question <span style={{color: '#ef4444'}}>*</span></label>
+              <label className="config-form-label">
+                Poll Question <span style={{color: '#ef4444'}}>*</span>
+              </label>
               <input
                 type="text"
                 className="config-form-input"
                 placeholder="Enter your poll question..."
                 value={questionTitle}
-                onChange={(e) => setQuestionTitle(e.target.value)}
+                onChange={(e) => {
+                  setQuestionTitle(e.target.value);
+                  setTouched(prev => ({ ...prev, title: true }));
+                }}
                 maxLength={200}
-                style={{fontSize: '1.1rem', fontWeight: '500'}}
+                style={{
+                  fontSize: '1.1rem',
+                  fontWeight: '500',
+                  borderColor: hasFieldError('title') && touched.title ? '#ef4444' : '',
+                  backgroundColor: hasFieldError('title') && touched.title ? '#fef2f2' : ''
+                }}
               />
+              {hasFieldError('title') && touched.title && (
+                <p style={{
+                  color: '#ef4444',
+                  fontSize: '0.875rem',
+                  marginTop: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}>
+                  <span>⚠️</span>
+                  <span>{getFieldError('title')}</span>
+                </p>
+              )}
             </div>
 
             <div className="config-form-group" style={{marginBottom: '1.5rem'}}>
@@ -296,14 +364,18 @@ const MainContent = ({
                       className="config-form-input"
                       placeholder={`Option ${index + 1}`}
                       value={option}
-                      onChange={(e) => updateOption(index, e.target.value)}
+                      onChange={(e) => {
+                        updateOption(index, e.target.value);
+                        setTouched(prev => ({ ...prev, options: true }));
+                      }}
                       maxLength={100}
                       disabled={isEditing}
                       style={{
                         backgroundColor: isEditing ? '#f3f4f6' : 'white',
                         cursor: isEditing ? 'not-allowed' : 'text',
                         opacity: isEditing ? 0.7 : 1,
-                        color: isEditing ? '#6b7280' : '#111827'
+                        color: isEditing ? '#6b7280' : '#111827',
+                        borderColor: hasFieldError('options') && touched.options ? '#ef4444' : ''
                       }}
                     />
                     {options.length > 2 && !isEditing && (
@@ -327,6 +399,20 @@ const MainContent = ({
                 ))}
               </div>
               
+              {hasFieldError('options') && touched.options && (
+                <p style={{
+                  color: '#ef4444',
+                  fontSize: '0.875rem',
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}>
+                  <span>⚠️</span>
+                  <span>{getFieldError('options')}</span>
+                </p>
+              )}
+              
               {!isEditing && options.length < 10 && (
                 <button
                   onClick={addOption}
@@ -343,12 +429,6 @@ const MainContent = ({
                 >
                   + Add Option
                 </button>
-              )}
-              
-              {options.length < 2 && (
-                <p style={{color: '#ef4444', fontSize: '0.875rem', marginTop: '0.5rem'}}>
-                  Poll needs at least 2 options
-                </p>
               )}
             </div>
           </div>
@@ -444,6 +524,24 @@ const MainContent = ({
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                   <strong>Access control settings cannot be changed after poll creation</strong>
+                </div>
+              )}
+              
+              {hasFieldError('allowedVoters') && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem',
+                  fontSize: '0.875rem',
+                  color: '#991b1b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>⚠️</span>
+                  <strong>{getFieldError('allowedVoters')}</strong>
                 </div>
               )}
               
@@ -692,433 +790,393 @@ const MainContent = ({
         </div>
       )}
 
-      {activeTab === "Schedule" && (
-  <div className="config-section-card">
-    <h2>Schedule</h2>
-    <p style={{ 
-      fontSize: "0.875rem", 
-      color: "#6b7280", 
-      marginBottom: "1.5rem",
-      marginTop: "-0.5rem"
-    }}>
-      Set when your poll will start and end. Both dates are required.
-    </p>
+  {activeTab === "Schedule" && (
+    <>
+      {/* Show validation errors at top of tab */}
+      <ErrorAlert errors={currentTabErrors} />
+      
+      <div className="config-section-card">
+        <h2>Schedule</h2>
+        <p style={{ 
+          fontSize: "0.875rem", 
+          color: "#6b7280", 
+          marginBottom: "1.5rem",
+          marginTop: "-0.5rem"
+        }}>
+          Set when your poll will start and end. Both dates are required.
+        </p>
 
-    <div className="config-section-content">
-      <div className="config-form-grid">
-        {/* START DATE */}
-        <div className="config-form-group">
-          <label className="config-form-label" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.25rem' 
-          }}>
-            Poll Start Date & Time
-            <span style={{ color: '#ef4444', fontSize: '1.2rem' }}>*</span>
-          </label>
-          
-          <input
-            type="datetime-local"
-            className="config-form-input"
-            onClick={(e) => e.target.showPicker && e.target.showPicker()}
-            value={configData.startDate ? configData.startDate.slice(0, 16) : ""}
-            onChange={(e) => handleDateChange("startDate", e.target.value)}
-            onBlur={(e) => {
-              const value = e.target.value;
-              if (!value || value.trim() === '') {
-                setDateErrors(prev => ({ ...prev, startDate: true }));
-              }
-            }}
-            min={new Date().toISOString().slice(0, 16)}
-            max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 16)}
-            style={{
-              borderColor: dateErrors.startDate || dateErrors.startBeforeClose ? '#ef4444' : '',
-              backgroundColor: dateErrors.startDate || dateErrors.startBeforeClose ? '#fef2f2' : ''
-            }}
-            required
-          />
-          
-          {dateErrors.startDate && (
-            <p style={{ 
-              color: "#ef4444", 
-              fontSize: "0.75rem", 
-              marginTop: "4px",
+        <div className="config-section-content">
+          <div className="config-form-grid">
+            {/* START DATE */}
+            <div className="config-form-group">
+              <label className="config-form-label" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.25rem' 
+              }}>
+                Poll Start Date & Time
+                <span style={{ color: '#ef4444', fontSize: '1.2rem' }}>*</span>
+              </label>
+              
+              <input
+                type="datetime-local"
+                className="config-form-input"
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                value={configData.startDate ? configData.startDate.slice(0, 16) : ""}
+                onChange={(e) => handleDateChange("startDate", e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 16)}
+                style={{
+                  borderColor: hasFieldError('startDate') ? '#ef4444' : '',
+                  backgroundColor: hasFieldError('startDate') ? '#fef2f2' : ''
+                }}
+                required
+              />
+              
+              {hasFieldError('startDate') && (
+                <p style={{ 
+                  color: "#ef4444", 
+                  fontSize: "0.75rem", 
+                  marginTop: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px"
+                }}>
+                  <span>⚠️</span>
+                  <span>{getFieldError('startDate')}</span>
+                </p>
+              )}
+              
+              {!hasFieldError('startDate') && (
+                <p style={{
+                  fontSize: "0.75rem", 
+                  color: "#6b7280", 
+                  marginTop: "4px"
+                }}>
+                  Maximum: 1 year from today
+                </p>
+              )}
+            </div>
+
+            {/* END DATE */}
+            <div className="config-form-group">
+              <label className="config-form-label" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.25rem' 
+              }}>
+                Poll Close Date & Time
+                <span style={{ color: '#ef4444', fontSize: '1.2rem' }}>*</span>
+              </label>
+              
+              <input
+                type="datetime-local"
+                className="config-form-input"
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                value={configData.closeDate ? configData.closeDate.slice(0, 16) : ""}
+                onChange={(e) => handleDateChange("closeDate", e.target.value)}
+                min={configData.startDate ? configData.startDate.slice(0, 16) : new Date().toISOString().slice(0, 16)}
+                max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().slice(0, 16)}
+                style={{
+                  borderColor: hasFieldError('closeDate') ? '#ef4444' : '',
+                  backgroundColor: hasFieldError('closeDate') ? '#fef2f2' : ''
+                }}
+                required
+              />
+              
+              {hasFieldError('closeDate') && (
+                <p style={{ 
+                  color: "#ef4444", 
+                  fontSize: "0.75rem", 
+                  marginTop: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px"
+                }}>
+                  <span>⚠️</span>
+                  <span>{getFieldError('closeDate')}</span>
+                </p>
+              )}
+              
+              {!hasFieldError('closeDate') && (
+                <p style={{
+                  fontSize: "0.75rem", 
+                  color: "#6b7280", 
+                  marginTop: "4px"
+                }}>
+                  Must be after start date
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* SUCCESS STATE - Show when both dates are valid */}
+          {configData.startDate && 
+           configData.closeDate && 
+           !hasFieldError('startDate') && 
+           !hasFieldError('closeDate') && (
+            <div style={{
+              marginTop: "1rem",
+              padding: "0.75rem 1rem",
+              backgroundColor: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              borderRadius: "0.5rem",
               display: "flex",
               alignItems: "center",
-              gap: "4px"
+              gap: "0.5rem"
             }}>
-              <span>⚠️</span>
-              <span>Start date is required</span>
-            </p>
-          )}
-          
-          {!dateErrors.startDate && (
-            <p style={{
-              fontSize: "0.75rem", 
-              color: "#6b7280", 
-              marginTop: "4px"
-            }}>
-              Maximum: 1 year from today
-            </p>
-          )}
-        </div>
-
-        {/* END DATE */}
-        <div className="config-form-group">
-          <label className="config-form-label" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.25rem' 
-          }}>
-            Poll Close Date & Time
-            <span style={{ color: '#ef4444', fontSize: '1.2rem' }}>*</span>
-          </label>
-          
-          <input
-            type="datetime-local"
-            className="config-form-input"
-            onClick={(e) => e.target.showPicker && e.target.showPicker()}
-            value={configData.closeDate ? configData.closeDate.slice(0, 16) : ""}
-            onChange={(e) => handleDateChange("closeDate", e.target.value)}
-            onBlur={(e) => {
-              const value = e.target.value;
-              if (!value || value.trim() === '') {
-                setDateErrors(prev => ({ ...prev, closeDate: true }));
-              }
-            }}
-            min={configData.startDate ? configData.startDate.slice(0, 16) : new Date().toISOString().slice(0, 16)}
-            max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().slice(0, 16)}
-            style={{
-              borderColor: dateErrors.closeDate || dateErrors.startBeforeClose ? '#ef4444' : '',
-              backgroundColor: dateErrors.closeDate || dateErrors.startBeforeClose ? '#fef2f2' : ''
-            }}
-            required
-          />
-          
-          {dateErrors.closeDate && (
-            <p style={{ 
-              color: "#ef4444", 
-              fontSize: "0.75rem", 
-              marginTop: "4px",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px"
-            }}>
-              <span>⚠️</span>
-              <span>Close date is required</span>
-            </p>
-          )}
-          
-          {!dateErrors.closeDate && (
-            <p style={{
-              fontSize: "0.75rem", 
-              color: "#6b7280", 
-              marginTop: "4px"
-            }}>
-              Must be after start date
-            </p>
+              <span style={{ color: "#16a34a", fontSize: "1.25rem" }}>✓</span>
+              <p style={{ 
+                color: "#15803d", 
+                fontSize: "0.875rem",
+                margin: 0
+              }}>
+                Poll schedule configured successfully
+              </p>
+            </div>
           )}
         </div>
       </div>
+    </>
+  )}
 
-      {/* DATE COMPARISON ERROR */}
-      {dateErrors.startBeforeClose && (
-        <div style={{
-          marginTop: "1rem",
-          padding: "0.75rem 1rem",
-          backgroundColor: "#fef2f2",
-          border: "1px solid #fecaca",
-          borderRadius: "0.5rem",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: "0.5rem"
-        }}>
-          <span style={{ color: "#ef4444", fontSize: "1.25rem" }}>⚠️</span>
-          <div>
-            <p style={{ 
-              color: "#dc2626", 
-              fontWeight: "600", 
-              fontSize: "0.875rem",
-              marginBottom: "0.25rem"
-            }}>
-              Invalid Date Range
-            </p>
-            <p style={{ 
-              color: "#991b1b", 
-              fontSize: "0.8rem",
-              margin: 0
-            }}>
-              The poll start date must be before the close date. Please adjust your dates.
-            </p>
+  {/* ADVANCED TAB */}
+  {activeTab === "Advanced" && (
+    <div className="config-section-card">
+      <h2>Advanced Options</h2>
+      <div className="config-section-content">
+        <div className="config-toggle-container">
+          <div className="config-toggle-label">
+            <h3>Enable Comments</h3>
+            <p>Allow users to leave comments on the poll.</p>
           </div>
+          <label className="config-toggle-switch">
+            <input
+              type="checkbox"
+              checked={configData.enableComments}
+              onChange={(e) => handleChange("enableComments", e.target.checked)}
+            />
+            <span className="config-toggle-slider"></span>
+          </label>
         </div>
-      )}
 
-      {/* SUCCESS STATE - Show when both dates are valid */}
-      {configData.startDate && 
-       configData.closeDate && 
-       !dateErrors.startDate && 
-       !dateErrors.closeDate && 
-       !dateErrors.startBeforeClose && (
-        <div style={{
-          marginTop: "1rem",
-          padding: "0.75rem 1rem",
-          backgroundColor: "#f0fdf4",
-          border: "1px solid #bbf7d0",
-          borderRadius: "0.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem"
-        }}>
-          <span style={{ color: "#16a34a", fontSize: "1.25rem" }}>✓</span>
-          <p style={{ 
-            color: "#15803d", 
-            fontSize: "0.875rem",
-            margin: 0
-          }}>
-            Poll schedule configured successfully
-          </p>
+        <div className="config-toggle-container">
+          <div className="config-toggle-label">
+            <h3>Show Results During Voting</h3>
+            <p>Live results will be visible to voters after they have voted.</p>
+          </div>
+          <label className="config-toggle-switch">
+            <input
+              type="checkbox"
+              checked={configData.showResults}
+              onChange={(e) => handleChange("showResults", e.target.checked)}
+            />
+            <span className="config-toggle-slider"></span>
+          </label>
         </div>
-      )}
+      </div>
     </div>
-  </div>
-)}
+  )}
 
-      {/* ADVANCED TAB */}
-      {activeTab === "Advanced" && (
-        <div className="config-section-card">
-          <h2>Advanced Options</h2>
-          <div className="config-section-content">
-            <div className="config-toggle-container">
-              <div className="config-toggle-label">
-                <h3>Enable Comments</h3>
-                <p>Allow users to leave comments on the poll.</p>
+  {/* THEMES TAB */}
+  {activeTab === "Themes" && (
+    <>
+      <div className="config-section-card">
+        <h2>Theme Gallery</h2>
+        <div className="config-section-content">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+            {themes.map((theme) => (
+              <div
+                key={theme.id}
+                onClick={() => handleChange("selectedTheme", theme.id)}
+                style={{
+                  padding: "1rem",
+                  border: configData.selectedTheme === theme.id ? "2px solid #137fec" : "1px solid #e5e7eb",
+                  borderRadius: "0.5rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  backgroundColor: configData.selectedTheme === theme.id ? "#f0f7ff" : "#ffffff",
+                }}
+              >
+                <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>
+                  {theme.image}
+                </div>
+                <h3 style={{ fontSize: "1rem", fontWeight: "600", marginBottom: "0.5rem", color: "#111827" }}>
+                  {theme.name}
+                </h3>
+                <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                  {theme.description}
+                </p>
               </div>
-              <label className="config-toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={configData.enableComments}
-                  onChange={(e) => handleChange("enableComments", e.target.checked)}
-                />
-                <span className="config-toggle-slider"></span>
-              </label>
-            </div>
-
-            <div className="config-toggle-container">
-              <div className="config-toggle-label">
-                <h3>Show Results During Voting</h3>
-                <p>Live results will be visible to voters after they have voted.</p>
-              </div>
-              <label className="config-toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={configData.showResults}
-                  onChange={(e) => handleChange("showResults", e.target.checked)}
-                />
-                <span className="config-toggle-slider"></span>
-              </label>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* THEMES TAB */}
-      {activeTab === "Themes" && (
-        <>
-          <div className="config-section-card">
-            <h2>Theme Gallery</h2>
-            <div className="config-section-content">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-                {themes.map((theme) => (
-                  <div
-                    key={theme.id}
-                    onClick={() => handleChange("selectedTheme", theme.id)}
-                    style={{
-                      padding: "1rem",
-                      border: configData.selectedTheme === theme.id ? "2px solid #137fec" : "1px solid #e5e7eb",
-                      borderRadius: "0.5rem",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      backgroundColor: configData.selectedTheme === theme.id ? "#f0f7ff" : "#ffffff",
-                    }}
-                  >
-                    <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>
-                      {theme.image}
-                    </div>
-                    <h3 style={{ fontSize: "1rem", fontWeight: "600", marginBottom: "0.5rem", color: "#111827" }}>
-                      {theme.name}
-                    </h3>
-                    <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-                      {theme.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="config-section-card">
-            <h2>Theme Adjustments</h2>
-            <div className="config-section-content">
-              <div className="config-form-group">
-                <label className="config-form-label">Company Logo (Optional)</label>
-                <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                  Upload your company logo to display on the poll
-                </p>
-                <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <input
-                      type="text"
-                      className="config-form-input"
-                      placeholder="Enter logo URL or upload new"
-                      value={configData.logo}
-                      onChange={(e) => handleChange("logo", e.target.value)}
-                      onBlur={(e) => handleUrlBlur('logo', e.target.value)}
-                      style={{ 
-                        borderColor: urlErrors.logo ? '#ef4444' : '', 
-                        backgroundColor: urlErrors.logo ? '#fef2f2' : '' 
-                      }}
-                    />
-                    {urlErrors.logo && <span style={{color: '#ef4444', fontSize: '0.75rem'}}>⚠️ URL does not point to a valid image</span>}
-                    {isValidating.logo && <span style={{color: '#6b7280', fontSize: '0.75rem'}}>Validating URL...</span>}
-                  </div>
-                  
-                  <input
-                    type="file"
-                    ref={logoInputRef}
-                    onChange={(e) => handleFileChange(e, 'logo')}
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                  />
-                  
-                  <button
-                    onClick={() => triggerFileUpload(logoInputRef)}
-                    className="config-btn"
-                    style={{
-                      padding: "0.625rem 1rem",
-                      backgroundColor: "#e5e7eb",
-                      color: "#111827",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "0.5rem",
-                      fontWeight: "600",
-                      fontSize: "0.875rem",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Upload Logo
-                  </button>
-                </div>
-                {configData.logo && !urlErrors.logo && (
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <img src={configData.logo} alt="Logo Preview" style={{ maxWidth: "100px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} />
-                  </div>
-                )}
-              </div>
-
-              <div className="config-form-group">
-                <label className="config-form-label">Background Image</label>
-                <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
-                  Current image URL or upload new
-                </p>
-                <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <input
-                      type="text"
-                      className="config-form-input"
-                      placeholder="Enter image URL"
-                      value={configData.backgroundImage}
-                      onChange={(e) => handleChange("backgroundImage", e.target.value)}
-                      onBlur={(e) => handleUrlBlur('background', e.target.value)}
-                      style={{ 
-                        borderColor: urlErrors.background ? '#ef4444' : '', 
-                        backgroundColor: urlErrors.background ? '#fef2f2' : '' 
-                      }}
-                    />
-                    {urlErrors.background && <span style={{color: '#ef4444', fontSize: '0.75rem'}}>⚠️ URL does not point to a valid image</span>}
-                    {isValidating.background && <span style={{color: '#6b7280', fontSize: '0.75rem'}}>Validating URL...</span>}
-                  </div>
-                  
-                  <input
-                    type="file"
-                    ref={bgInputRef}
-                    onChange={(e) => handleFileChange(e, 'backgroundImage')}
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                  />
-                  
-                  <button
-                    onClick={() => triggerFileUpload(bgInputRef)}
-                    type="button"
-                    className="config-btn"
-                    style={{
-                      padding: "0.625rem 1rem",
-                      backgroundColor: "#e5e7eb",
-                      color: "#111827",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "0.5rem",
-                      fontWeight: "600",
-                      fontSize: "0.875rem",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Upload
-                  </button>
-                </div>
-                {configData.backgroundImage && !urlErrors.background && (
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <img 
-                      src={configData.backgroundImage} 
-                      alt="Background Preview" 
-                      style={{ maxWidth: "200px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} 
-                      onError={() => setUrlErrors(prev => ({...prev, background: true}))}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="config-form-group">
-                <label className="config-form-label">Font Style</label>
-                <select
+      <div className="config-section-card">
+        <h2>Theme Adjustments</h2>
+        <div className="config-section-content">
+          <div className="config-form-group">
+            <label className="config-form-label">Company Logo (Optional)</label>
+            <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+              Upload your company logo to display on the poll
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <input
+                  type="text"
                   className="config-form-input"
-                  value={configData.fontStyle}
-                  onChange={(e) => handleChange("fontStyle", e.target.value)}
-                >
-                  <option value="inter">Inter (Default)</option>
-                  <option value="roboto">Roboto</option>
-                  <option value="poppins">Poppins</option>
-                  <option value="playfair">Playfair Display</option>
-                </select>
-              </div>
-
-              <div className="config-form-group">
-                <label className="config-form-label">Primary Color</label>
-                <input
-                  type="color"
-                  value={configData.primaryColor}
-                  onChange={(e) => handleChange("primaryColor", e.target.value)}
-                  style={{ width: "100%", height: "40px", cursor: "pointer", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
+                  placeholder="Enter logo URL or upload new"
+                  value={configData.logo}
+                  onChange={(e) => handleChange("logo", e.target.value)}
+                  onBlur={(e) => handleUrlBlur('logo', e.target.value)}
+                  style={{ 
+                    borderColor: urlErrors.logo ? '#ef4444' : '', 
+                    backgroundColor: urlErrors.logo ? '#fef2f2' : '' 
+                  }}
                 />
+                {urlErrors.logo && <span style={{color: '#ef4444', fontSize: '0.75rem'}}>⚠️ URL does not point to a valid image</span>}
+                {isValidating.logo && <span style={{color: '#6b7280', fontSize: '0.75rem'}}>Validating URL...</span>}
               </div>
-
-              <div className="config-form-group">
-                <label className="config-form-label">Secondary Color</label>
-                <input
-                  type="color"
-                  value={configData.secondaryColor}
-                  onChange={(e) => handleChange("secondaryColor", e.target.value)}
-                  style={{ width: "100%", height: "40px", cursor: "pointer", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
-                />
-              </div>
+              
+              <input
+                type="file"
+                ref={logoInputRef}
+                onChange={(e) => handleFileChange(e, 'logo')}
+                accept="image/*"
+                style={{ display: 'none' }}
+              />
+              
+              <button
+                onClick={() => triggerFileUpload(logoInputRef)}
+                className="config-btn"
+                style={{
+                  padding: "0.625rem 1rem",
+                  backgroundColor: "#e5e7eb",
+                  color: "#111827",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.5rem",
+                  fontWeight: "600",
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Upload Logo
+              </button>
             </div>
+            {configData.logo && !urlErrors.logo && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <img src={configData.logo} alt="Logo Preview" style={{ maxWidth: "100px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} />
+              </div>
+            )}
           </div>
-        </>
-      )}
-    </main>
+
+          <div className="config-form-group">
+            <label className="config-form-label">Background Image</label>
+            <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem" }}>
+              Current image URL or upload new
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <input
+                  type="text"
+                  className="config-form-input"
+                  placeholder="Enter image URL"
+                  value={configData.backgroundImage}
+                  onChange={(e) => handleChange("backgroundImage", e.target.value)}
+                  onBlur={(e) => handleUrlBlur('background', e.target.value)}
+                  style={{ 
+                    borderColor: urlErrors.background ? '#ef4444' : '', 
+                    backgroundColor: urlErrors.background ? '#fef2f2' : '' 
+                  }}
+                />
+                {urlErrors.background && <span style={{color: '#ef4444', fontSize: '0.75rem'}}>⚠️ URL does not point to a valid image</span>}
+                {isValidating.background && <span style={{color: '#6b7280', fontSize: '0.75rem'}}>Validating URL...</span>}
+              </div>
+              
+              <input
+                type="file"
+                ref={bgInputRef}
+                onChange={(e) => handleFileChange(e, 'backgroundImage')}
+                accept="image/*"
+                style={{ display: 'none' }}
+              />
+              
+              <button
+                onClick={() => triggerFileUpload(bgInputRef)}
+                type="button"
+                className="config-btn"
+                style={{
+                  padding: "0.625rem 1rem",
+                  backgroundColor: "#e5e7eb",
+                  color: "#111827",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.5rem",
+                  fontWeight: "600",
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Upload
+              </button>
+            </div>
+            {configData.backgroundImage && !urlErrors.background && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <img 
+                  src={configData.backgroundImage} 
+                  alt="Background Preview" 
+                  style={{ maxWidth: "200px", height: "auto", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }} 
+                  onError={() => setUrlErrors(prev => ({...prev, background: true}))}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="config-form-group">
+            <label className="config-form-label">Font Style</label>
+            <select
+              className="config-form-input"
+              value={configData.fontStyle}
+              onChange={(e) => handleChange("fontStyle", e.target.value)}
+            >
+              <option value="inter">Inter (Default)</option>
+              <option value="roboto">Roboto</option>
+              <option value="poppins">Poppins</option>
+              <option value="playfair">Playfair Display</option>
+            </select>
+          </div>
+
+          <div className="config-form-group">
+            <label className="config-form-label">Primary Color</label>
+            <input
+              type="color"
+              value={configData.primaryColor}
+              onChange={(e) => handleChange("primaryColor", e.target.value)}
+              style={{ width: "100%", height: "40px", cursor: "pointer", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
+            />
+          </div>
+
+          <div className="config-form-group">
+            <label className="config-form-label">Secondary Color</label>
+            <input
+              type="color"
+              value={configData.secondaryColor}
+              onChange={(e) => handleChange("secondaryColor", e.target.value)}
+              style={{ width: "100%", height: "40px", cursor: "pointer", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  )}
+</main>
   );
 };
 
 export default MainContent;
+
