@@ -1,15 +1,34 @@
+// routes/pollRoutes.js
 const express = require('express');
 const router = express.Router();
-const pollController = require('../controllers/pollController');
-const voteController = require('../controllers/voteController');
-const { authenticate, authorize, optionalAuth } = require('../middlewares/authMiddleware');
+const { authenticate, optionalAuth, authorize } = require('../middleware/authMiddleware');
+const { createPoll, getPoll, editPoll, deletePoll, getDashboard } = require('../controllers/pollController');
+const { submitVote } = require('../controllers/voteController');
 
-router.post('/', authenticate, authorize('ADMIN'), pollController.createPoll);
-router.get('/dashboard', authenticate, pollController.getDashboard);
-router.post('/:pollId/vote', optionalAuth, voteController.submitVote);
-router.put('/:id', authenticate, pollController.editPoll);
-router.delete('/:id', authenticate, pollController.deletePoll);  // ← Fixed!
-router.get('/:id', optionalAuth, pollController.getPoll);       // Last!
+// ========================================
+// PUBLIC ROUTES (with optional auth)
+// ========================================
 
+// Get single poll (public, but detects if user is logged in)
+router.get('/:id', optionalAuth, getPoll);
+
+// Submit vote (public, but detects if user is logged in for private polls)
+router.post('/:pollId/vote', optionalAuth, submitVote);
+
+// ========================================
+// PROTECTED ROUTES (require authentication)
+// ========================================
+
+// Create poll (admin/voter can create)
+router.post('/', authenticate, createPoll);
+
+// Edit poll (only creator)
+router.put('/:id', authenticate, editPoll);
+
+// Delete poll (only creator)
+router.delete('/:id', authenticate, deletePoll);
+
+// Get dashboard (user's polls)
+router.get('/dashboard/my-polls', authenticate, getDashboard);
 
 module.exports = router;

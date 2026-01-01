@@ -1,20 +1,29 @@
+// controllers/authController.js
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const userModel = require('../models/userModel');
-const generateToken = require('../utils/jwtGenerator');
+const generateToken = require('../utils/jwtGenerator'); // ✅ Default import
 const sendEmail = require('../utils/emailService');
+
+// Debug: Check if generateToken is imported correctly
+console.log('🔍 generateToken imported as:', typeof generateToken);
 
 // 1. REGISTER
 const register = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
+        
+        console.log('📝 Register request:', { name, email, role });
+
         if (!name || !email || !password) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
+
         const userExists = await userModel.findUserByEmail(email);
         if (userExists) {
             return res.status(401).json({ message: "User already exists" });
         }
+
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
@@ -22,17 +31,26 @@ const register = async (req, res) => {
         const validRole = role === 'ADMIN' ? 'ADMIN' : 'VOTER';
         const newUser = await userModel.createUser(name, email, passwordHash, validRole);
 
-        console.log('🔐 Generating token for new user:', newUser.id, newUser.email, newUser.role);
+        console.log('✅ User created:', { id: newUser.id, email: newUser.email, role: newUser.role });
+        console.log('🔐 Generating token...');
         
-        // ✅ FIXED: Pass all three parameters in correct order
+        // ✅ Generate token with all required parameters
         const token = generateToken(newUser.id, newUser.email, newUser.role);
         
         console.log('✅ Token generated successfully');
         
-        res.status(201).json({ token, user: newUser });
+        res.status(201).json({ 
+            token, 
+            user: {
+                id: newUser.id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role
+            }
+        });
     } catch (err) {
-        console.error('❌ Register error:', err.message);
-        res.status(500).json({ message: "Server Error" });
+        console.error('❌ Register error:', err);
+        res.status(500).json({ message: "Server Error", error: err.message });
     }
 };
 
@@ -40,18 +58,37 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        console.log('🔐 Login attempt for:', email);
+
+        if (!email || !password) {
+            return res.status(400).json({ message: "Please provide email and password" });
+        }
+
         const user = await userModel.findUserByEmail(email);
         if (!user) {
-            return res.status(401).json({ message: "Invalid Credential" });
+            console.log('❌ User not found:', email);
+            return res.status(401).json({ message: "Invalid credentials" });
         }
+
+        console.log('✅ User found:', { id: user.id, email: user.email, role: user.role });
+
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-            return res.status(401).json({ message: "Invalid Credential" });
+            console.log('❌ Password mismatch');
+            return res.status(401).json({ message: "Invalid credentials" });
         }
+
+        console.log('✅ Password verified');
+        console.log('🔐 Generating token for:', { id: user.id, email: user.email, role: user.role });
         
-        console.log('🔐 Generating token for user:', user.id, user.email, user.role);
-        
-        // ✅ FIXED: Pass all three parameters in correct order
+        // ✅ Check if generateToken exists before calling
+        if (typeof generateToken !== 'function') {
+            console.error('❌ generateToken is not a function! Type:', typeof generateToken);
+            throw new Error('Token generation function not available');
+        }
+
+        // ✅ Generate token with all required parameters
         const token = generateToken(user.id, user.email, user.role);
         
         console.log('✅ Token generated successfully');
@@ -66,8 +103,8 @@ const login = async (req, res) => {
             } 
         });
     } catch (err) {
-        console.error('❌ Login error:', err.message);
-        res.status(500).json({ message: "Server Error" });
+        console.error('❌ Login error:', err);
+        res.status(500).json({ message: "Server Error", error: err.message });
     }
 };
 
@@ -80,7 +117,7 @@ const logout = async (req, res) => {
         await userModel.addToBlacklist(token);
         res.status(200).json({ message: "Logged out successfully" });
     } catch (err) {
-        console.error(err);
+        console.error('❌ Logout error:', err);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -90,15 +127,12 @@ const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        // 1. Check if user exists
         const user = await userModel.findUserByEmail(email);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // 2. Generate and Save Token
         const resetToken = crypto.randomBytes(32).toString('hex');
         await userModel.saveResetToken(user.id, resetToken);
 
-        // 3. Prepare Email Content
         const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
 
         const emailSubject = "Password Reset Request";
@@ -106,17 +140,16 @@ const forgotPassword = async (req, res) => {
             <div style="font-family: Arial, sans-serif; padding: 20px;">
                 <h2>Password Reset</h2>
                 <p>Hello ${user.name},</p>
-                <p>You requested a password reset. Please click the button below to verify your email:</p>
+                <p>You requested a password reset. Please click the button below:</p>
                 <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
                 <p>Or copy this link: ${resetLink}</p>
                 <p>This link expires in 1 hour.</p>
             </div>
         `;
 
-        // 4. Send Email
         await sendEmail(email, emailSubject, emailBody);
 
-        console.log(`✅ Email sent to ${email}`);
+        console.log(`✅ Password reset email sent to ${email}`);
         res.json({ message: "Password reset link sent to your email" });
 
     } catch (err) {
@@ -138,11 +171,10 @@ const resetPassword = async (req, res) => {
 
         res.json({ message: "Password updated successfully" });
     } catch (err) {
-        console.error(err);
+        console.error('❌ Reset password error:', err);
         res.status(500).json({ message: "Server Error" });
     }
 };
-
 
 module.exports = {
     register,
