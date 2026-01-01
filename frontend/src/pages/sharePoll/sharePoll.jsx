@@ -2,11 +2,12 @@
 import React, { useState } from "react";
 import "../../styles/sharePoll.css"; 
 import Swal from 'sweetalert2';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 const SharePoll = () => {
+  const { pollId } = useParams();
   const navigate = useNavigate();
   // The poll link (In a real app, retrieve this from props or URL params)
-  const pollLink = "https://yourpoll.com/p/xyz123";
+  const pollLink = pollId ? `http://localhost:5173/poll/${pollId}` : "https://yourpoll.com/p/xyz123";
   const qrImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuAD6h1Avu8A1aljHpdjV1q0Xswjwm3oOcWv7FTnmEEOoRNag-jZBKTXEvONmCF_ZW1jxovlvRLha50BcR1xAclLWsKttONzFO8MRHAwO8XhLEi3CVRwyci8t3NR4-9tORvjGq5kINhC6AW60luL8cY5BPFzcid7vaGeJ01fVCYNEQHA9EnJDSTwT5cm3tzN-Mj2yYel-TOW8Q3LXKD-EFPa76kMja_1aVVA-ZMFczh2j5pTBnEesITxQ43Ngz13ZXIS22p0z1esWfhy";
 
   const [copyStatus, setCopyStatus] = useState("content_copy"); // Icon state

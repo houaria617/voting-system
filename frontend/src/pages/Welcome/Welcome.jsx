@@ -18,8 +18,8 @@ const Welcome = () => {
       {/* Header */}
       <header className="welcome-header">
         <div className="logo">
-          <span className="logo-icon"><FaHome /></span>
-          <span className="logo-text">VoteSphere</span>
+          <img src="/Electra_Voting_Platform_Logo_-_Flat_Vector_Design-removebg-preview.png" alt="Electra" className="logo-image" />
+          <span className="logo-text">Electra</span>
         </div>
         <nav className="nav-links">
           <a href="#about">About Us</a>
@@ -96,11 +96,11 @@ const Welcome = () => {
         <div className="footer-content">
           <div className="footer-brand">
             <div className="logo">
-              <span className="logo-icon"><FaHome /></span>
-              <span className="logo-text">VoteSphere</span>
+              <img src="/Electra_Voting_Platform_Logo_-_Flat_Vector_Design-removebg-preview.png" alt="Electra" className="footer-logo-image" />
+              <span className="logo-text">Electra</span>
             </div>
             <p>Secure and transparent online voting for everyone.</p>
-            <p className="copyright">© 2024 VoteSphere. All rights reserved.</p>
+            <p className="copyright">© 2024 Electra. All rights reserved.</p>
           </div>
           
           <div className="footer-links">

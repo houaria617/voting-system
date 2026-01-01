@@ -268,6 +268,14 @@ const VoterPage = () => {
           color: '#9ca3af',
           fontSize: '0.875rem'
         }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <img 
+              src="/Electra_Voting_Platform_Logo_-_Flat_Vector_Design-removebg-preview.png" 
+              alt="Electra" 
+              style={{ height: '30px', width: 'auto', marginRight: '0.5rem' }}
+            />
+            <span style={{ fontWeight: 'bold', color: '#374151' }}>Electra</span>
+          </div>
           <a 
             href="#" 
             style={{ color: '#9ca3af', textDecoration: 'none', marginRight: '1rem' }}

@@ -4,7 +4,7 @@ import '../../styles/pollPreview.css';
 import { useNavigate } from "react-router-dom";
 import Button from '../common/Button';
 
-const PollHeader = ({ title, description }) => {
+const PollHeader = ({ title, description, onShare }) => {
   const navigate = useNavigate();
   return (
     <div className="poll-header">
@@ -15,7 +15,7 @@ const PollHeader = ({ title, description }) => {
 
       {/* BUTTONS CONTAINER */}
       <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <button className="share-button">
+        <button className="share-button" onClick={onShare}>
           <Share2 size={20} />
         </button>
 

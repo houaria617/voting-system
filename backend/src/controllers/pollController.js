@@ -20,8 +20,8 @@ const createPoll = async (req, res) => {
             theme,
             settings,
             invitedEmails,
-            startDate, // <--- Critical
-            endDate    // <--- Critical
+            startDate,
+            endDate
         } = req.body;
 
         const creatorId = req.user.id;

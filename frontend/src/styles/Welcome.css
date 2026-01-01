@@ -28,6 +28,11 @@
     font-weight: 600;
 }
 
+.logo-image {
+    height: 60px;
+    width: auto;
+}
+
 .logo-icon {
     font-size: 1.3rem;
 }
@@ -285,6 +290,14 @@
 .footer-brand .logo {
     color: rgb(0, 0, 0);
     margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-logo-image {
+    height: 30px;
+    width: auto;
 }
 
 .footer-brand p {

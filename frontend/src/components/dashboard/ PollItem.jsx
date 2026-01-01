@@ -6,7 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 const PollItem = ({ poll }) => {
   const navigate = useNavigate();
    const handleViewPoll = () => {
-    navigate('/poll-preview');
+    navigate(`/poll/${poll.id}/results`);
   };
   return (
     <div className="poll-item">

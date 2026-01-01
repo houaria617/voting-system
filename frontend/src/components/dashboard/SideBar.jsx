@@ -7,10 +7,8 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <div className="logo-icon">
-          <BarChart3 size={20} />
-        </div>
-        <h1 className="logo-text">VoteSys</h1>
+        <img src="/Electra_Voting_Platform_Logo_-_Flat_Vector_Design-removebg-preview.png" alt="Electra" className="sidebar-logo-image" />
+        <h1 className="logo-text">Electra</h1>
       </div>
       
       <nav className="sidebar-nav">

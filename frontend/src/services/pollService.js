@@ -149,7 +149,7 @@ class PollService {
 
       return {
         success: true,
-        poll: response.data.poll
+        poll: response.data
       };
     } catch (err) {
       console.error('❌ Error fetching poll:', err);
@@ -172,7 +172,7 @@ class PollService {
 
       return {
         success: true,
-        poll: response.data.poll
+        poll: response.data
       };
     } catch (err) {
       console.error('❌ Error fetching poll preview:', err);
@@ -263,13 +263,39 @@ class PollService {
    */
   validateImageUrl(url) {
     if (!url) return Promise.resolve(true);
-    
+
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(true);
       img.onerror = () => resolve(false);
       img.src = url;
     });
+  }
+
+  /**
+   * Submit a vote for a poll
+   * @param {string} pollId - Poll ID
+   * @param {number} optionId - Selected option ID
+   * @returns {Promise<Object>} Vote submission result
+   */
+  async submitVote(pollId, optionId) {
+    try {
+      const response = await API.post(`/polls/${pollId}/vote`, {
+        optionId: optionId
+      });
+
+      return {
+        success: true,
+        message: response.data.message || 'Vote submitted successfully'
+      };
+    } catch (err) {
+      console.error('❌ Error submitting vote:', err);
+
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Failed to submit vote'
+      };
+    }
   }
 }
 

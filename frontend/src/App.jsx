@@ -14,6 +14,7 @@ import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 import DashboardPage from './pages/DashboardPage';
 import PollPreviewPage from './pages/PollPreviewPage';
+import PollResultsPage from './pages/PollResultsPage';
 
 function App() {
                                                 
@@ -28,13 +29,14 @@ function App() {
         {/* Poll creation flow */}
         <Route path="/create-poll" element={<CreatePollPage />} />
         <Route path="/configure-poll" element={<ConfigurePollPage />} />
-        <Route path="/share-poll" element={<SharePoll />} />
+        <Route path="/share-poll/:pollId" element={<SharePoll />} />
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Poll preview */}
         <Route path="/poll-preview" element={<PollPreviewPage />} />
+        <Route path="/poll/:pollId/results" element={<PollResultsPage />} />
         <Route path="/poll/:pollId" element={<PollLandingPage />} />
       </Routes>
     </Router>

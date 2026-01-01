@@ -118,10 +118,8 @@ const DashboardPage = () => {
         <footer className="dashboard-footer">
           <div className="footer-content">
             <div className="footer-logo">
-              <div className="logo-icon">
-                <BarChart3 size={20} />
-              </div>
-              <span className="logo-text">VoteSys</span>
+              <img src="/Electra_Voting_Platform_Logo_-_Flat_Vector_Design-removebg-preview.png" alt="Electra" className="footer-logo-image" />
+              <span className="logo-text">Electra</span>
             </div>
 
             <div className="footer-links">
@@ -132,7 +130,7 @@ const DashboardPage = () => {
             </div>
 
             <p className="footer-copyright">
-              © 2024 VoteSys. All rights reserved.
+              © 2024 Electra. All rights reserved.
             </p>
           </div>
         </footer>
