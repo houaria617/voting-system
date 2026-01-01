@@ -1,48 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import Swal from 'sweetalert2';
+// ===== SharePoll.jsx =====
+import React, { useState } from "react";
 import "../../styles/sharePoll.css"; 
-
+import Swal from 'sweetalert2';
+import { useNavigate } from "react-router-dom";
 const SharePoll = () => {
   const navigate = useNavigate();
-  const { state } = useLocation();
-  
-  const [poll, setPoll] = useState(null);
-  const [pollLink, setPollLink] = useState("");
-  const [qrImage, setQrImage] = useState("");
-  const [copyStatus, setCopyStatus] = useState("content_copy");
+  // The poll link (In a real app, retrieve this from props or URL params)
+  const pollLink = "https://yourpoll.com/p/xyz123";
+  const qrImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuAD6h1Avu8A1aljHpdjV1q0Xswjwm3oOcWv7FTnmEEOoRNag-jZBKTXEvONmCF_ZW1jxovlvRLha50BcR1xAclLWsKttONzFO8MRHAwO8XhLEi3CVRwyci8t3NR4-9tORvjGq5kINhC6AW60luL8cY5BPFzcid7vaGeJ01fVCYNEQHA9EnJDSTwT5cm3tzN-Mj2yYel-TOW8Q3LXKD-EFPa76kMja_1aVVA-ZMFczh2j5pTBnEesITxQ43Ngz13ZXIS22p0z1esWfhy";
 
-  // ✅ Load poll data on mount
-  useEffect(() => {
-    if (state?.poll) {
-      setPoll(state.poll);
-      
-      // ✅ Generate poll link based on poll ID
-      const baseUrl = window.location.origin;
-      const link = `${baseUrl}/vote/${state.poll.id}`;
-      setPollLink(link);
-      
-      // ✅ Generate QR code using a QR code API
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
-      setQrImage(qrCodeUrl);
-      
-      console.log('📊 Poll ready to share:', {
-        pollId: state.poll.id,
-        link: link,
-        qrCode: qrCodeUrl
-      });
-    } else {
-      // No poll data, redirect to dashboard
-      Swal.fire({
-        icon: 'warning',
-        title: 'No Poll Data',
-        text: 'No poll information available. Redirecting to dashboard...',
-        confirmButtonColor: '#137fec'
-      }).then(() => {
-        navigate('/dashboard');
-      });
-    }
-  }, [state, navigate]);
+  const [copyStatus, setCopyStatus] = useState("content_copy"); // Icon state
 
   // --- HANDLERS ---
   const handleDone = () => {
@@ -58,12 +25,12 @@ const SharePoll = () => {
       }
     });
   };
-
-  // Handle Copy to Clipboard
+  // 1. Handle Copy to Clipboard
   const handleCopy = () => {
     navigator.clipboard.writeText(pollLink).then(() => {
-      setCopyStatus("check");
+      setCopyStatus("check"); // Change icon to checkmark
       
+      // Show SweetAlert success notification
       Swal.fire({
         icon: 'success',
         title: 'Copied!',
@@ -74,7 +41,7 @@ const SharePoll = () => {
         timer: 2000
       });
       
-      setTimeout(() => setCopyStatus("content_copy"), 2000);
+      setTimeout(() => setCopyStatus("content_copy"), 2000); // Revert after 2s
     }).catch(() => {
       Swal.fire({
         icon: 'error',
@@ -88,72 +55,25 @@ const SharePoll = () => {
     });
   };
 
-  // Share Handlers
+  // 2. Share Handlers (Opens new window)
   const openShare = (url) => {
     window.open(url, "_blank", "width=600,height=400");
   };
 
-  const shareTwitter = () => openShare(`https://twitter.com/intent/tweet?text=Vote on my poll: ${poll?.title || ''}&url=${encodeURIComponent(pollLink)}`);
+  const shareTwitter = () => openShare(`https://twitter.com/intent/tweet?text=Vote on my poll!&url=${encodeURIComponent(pollLink)}`);
   const shareFacebook = () => openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pollLink)}`);
-  const shareTelegram = () => openShare(`https://t.me/share/url?url=${encodeURIComponent(pollLink)}&text=Check out this poll: ${poll?.title || ''}`);
-  const shareEmail = () => window.location.href = `mailto:?subject=Vote on this poll: ${poll?.title || ''}&body=Hi, check out this poll: ${pollLink}`;
+  const shareTelegram = () => openShare(`https://t.me/share/url?url=${encodeURIComponent(pollLink)}&text=Check out this poll!`);
+  const shareEmail = () => window.location.href = `mailto:?subject=Vote on this poll&body=Hi, check out this poll: ${pollLink}`;
   
   const handleDownloadQR = () => {
-    // ✅ Actually download the QR code
-    fetch(qrImage)
-      .then(response => response.blob())
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `poll-${poll?.id || 'qrcode'}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Downloaded!',
-          text: 'QR code saved to your downloads',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 2000
-        });
-      })
-      .catch(() => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Download Failed',
-          text: 'Could not download QR code',
-          confirmButtonColor: '#137fec'
-        });
-      });
+    // In a real app, you'd trigger a download of the image blob
+    Swal.fire({
+      icon: 'info',
+      title: 'Download Started',
+      text: 'Your QR code is being downloaded...',
+      confirmButtonColor: '#137fec'
+    });
   };
-
-  // ✅ Show loading state while poll data loads
-  if (!poll || !pollLink) {
-    return (
-      <div className="share-page-container">
-        <div className="share-wrapper">
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '3rem',
-            color: '#6b7280' 
-          }}>
-            <div style={{ 
-              fontSize: '2rem', 
-              marginBottom: '1rem' 
-            }}>
-              ⏳
-            </div>
-            <p>Loading poll information...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="share-page-container">
@@ -165,20 +85,7 @@ const SharePoll = () => {
         {/* Header */}
         <div className="share-header">
           <h1>Share Your Poll</h1>
-          <p>Your poll "{poll.title}" is ready! Share it to start collecting votes.</p>
-          
-          {/* ✅ Show poll stats */}
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            backgroundColor: '#f0f7ff',
-            borderRadius: '0.5rem',
-            fontSize: '0.875rem',
-            color: '#1e40af'
-          }}>
-            <strong>Poll ID:</strong> {poll.id} | 
-            <strong> Options:</strong> {poll.options?.length || poll.poll_options?.length || 0}
-          </div>
+          <p>Your poll is ready! Share it to start collecting votes.</p>
         </div>
 
         {/* White Card */}
@@ -226,8 +133,8 @@ const SharePoll = () => {
                     </svg>
                   </button>
 
-                  {/* Telegram */}
-                  <button className="social-btn" onClick={shareTelegram} title="Share on Telegram">
+                   {/* Telegram */}
+                   <button className="social-btn" onClick={shareTelegram} title="Share on Telegram">
                     <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                     </svg>

@@ -1,9 +1,11 @@
-import { useNavigate } from "react-router-dom";  // ✅ REMOVED useLocation
+import { useLocation, useNavigate } from "react-router-dom";
 import { BarChart3 } from "lucide-react";
 import Swal from "sweetalert2";
 
-const TopBar = ({ pollData }) => {  // ✅ PROP from parent
+const TopBar = () => {
+  const { state } = useLocation();
   const navigate = useNavigate();
+  const pollData = state?.pollData || {};
 
   const handleBackToDashboard = () => {
     Swal.fire({
@@ -17,6 +19,7 @@ const TopBar = ({ pollData }) => {  // ✅ PROP from parent
       cancelButtonText: 'Stay here'
     }).then((result) => {
       if (result.isConfirmed) {
+        // TODO: Save poll as draft to Supabase here
         console.log("Saving poll as draft...", pollData);
         
         Swal.fire({
@@ -43,7 +46,7 @@ const TopBar = ({ pollData }) => {  // ✅ PROP from parent
           <span className="config-breadcrumb-item">Configure Poll</span>
           <span className="config-breadcrumb-separator">:</span>
           <span className="config-breadcrumb-poll-title">
-            {pollData.title || pollData.question || "Untitled Poll"} 
+            {pollData.question || "Untitled Poll"}
           </span>
         </div>
       </div>

@@ -11,72 +11,61 @@ class PollService {
    */
   async createPoll(pollData, configData) {
     try {
-      // ✅ Validate required fields
-      if (!pollData || !pollData.title || pollData.title.trim() === '') {
-        throw new Error('Poll must have a title');
+      // Validate required fields
+      if (!pollData.title || !pollData.options || pollData.options.length < 2) {
+        throw new Error('Poll must have a title and at least 2 options');
       }
 
-      if (!pollData.options || !Array.isArray(pollData.options) || pollData.options.length < 2) {
-        throw new Error('Poll must have at least 2 options');
-      }
-
-      // ✅ Validate dates are present
+      // Validate dates are not empty
       if (!configData.startDate || configData.startDate.trim() === '') {
-        throw new Error('Start date is required');
+        throw new Error('Poll start date is required');
       }
 
       if (!configData.closeDate || configData.closeDate.trim() === '') {
-        throw new Error('Close date is required');
+        throw new Error('Poll close date is required');
       }
 
-      // ✅ Validate date logic
+      // Validate start date is before close date
       const startDate = new Date(configData.startDate);
       const closeDate = new Date(configData.closeDate);
-
-      if (isNaN(startDate.getTime())) {
-        throw new Error('Invalid start date format');
-      }
-
-      if (isNaN(closeDate.getTime())) {
-        throw new Error('Invalid close date format');
-      }
 
       if (startDate >= closeDate) {
         throw new Error('Start date must be before close date');
       }
 
-      // ✅ Store original options for later use
-      const originalOptions = pollData.options.filter(opt => opt.trim() !== '').map(opt => opt.trim());
+      // Validate dates are in the future
+      const now = new Date();
+      if (startDate < now) {
+        throw new Error('Start date cannot be in the past');
+      }
 
-      // ✅ Build complete poll data
+      // Build complete poll data
       const completeData = {
-        title: pollData.title.trim(),
-        description: pollData.description?.trim() || '',
-        options: originalOptions,
+        title: pollData.title || pollData.question,
+        description: pollData.description || '',
+        options: pollData.options,
+        startDate: configData.startDate, // ✅ Send at root level
+        endDate: configData.closeDate,   // ✅ Send at root level (backend might expect 'endDate')
         theme: {
-          primaryColor: configData.primaryColor || '#137fec',
-          secondaryColor: configData.secondaryColor || '#ffffff',
-          selectedTheme: configData.selectedTheme || 'corporate',
-          logo: configData.logo || '',
-          backgroundImage: configData.backgroundImage || '',
-          fontStyle: configData.fontStyle || 'inter'
+          primaryColor: configData.primaryColor,
+          secondaryColor: configData.secondaryColor,
+          selectedTheme: configData.selectedTheme,
+          logo: configData.logo,
+          backgroundImage: configData.backgroundImage,
+          fontStyle: configData.fontStyle
         },
         settings: {
           isAnonymous: configData.anonymity === 'fully-anonymous',
           visibility: configData.visibility === 'public' ? 'ALWAYS' : 'AFTER_VOTE',
           accessType: configData.visibility === 'public' ? 'PUBLIC' : 'PRIVATE',
-          allowMultiple: configData.ismultiplechoice || false,
+          allowMultiple: configData.ismultiplechoice,
           selectionLimit: configData.selectionLimit || 1,
           minSelectionLimit: configData.minSelectionLimit || 1,
-          enableComments: configData.enableComments !== undefined ? configData.enableComments : true,
-          showResults: configData.showResults !== undefined ? configData.showResults : false
+          enableComments: configData.enableComments,
+          showResults: configData.showResults
         },
-        schedule: {
-          startDate: configData.startDate,
-          closeDate: configData.closeDate
-        },
-        invitedEmails: configData.visibility === 'private' ? (configData.allowedVoters || []) : [],
-        allowedDomains: configData.visibility === 'private' ? (configData.allowedDomains || []) : []
+        invitedEmails: configData.visibility === 'private' ? configData.allowedVoters : [],
+        allowedDomains: configData.visibility === 'private' ? configData.allowedDomains : []
       };
 
       console.log('📤 Creating poll with data:', completeData);
@@ -86,55 +75,17 @@ class PollService {
 
       console.log('✅ Poll created successfully:', response.data);
 
-      // ⚠️ CRITICAL: Check if backend returned options
-      let pollWithOptions = response.data.poll || response.data;
-      
-      if (!pollWithOptions.options && !pollWithOptions.poll_options) {
-        console.warn('⚠️ Backend did not return options! Adding them manually...');
-        pollWithOptions.options = originalOptions;
-      }
-
-      // ⚠️ BACKUP: If backend still didn't return options, fetch the poll again
-      if (!pollWithOptions.options && !pollWithOptions.poll_options && pollWithOptions.id) {
-        console.warn('⚠️ Attempting to fetch poll with options...');
-        try {
-          const fetchResult = await this.getPoll(pollWithOptions.id);
-          if (fetchResult.success && (fetchResult.poll.options || fetchResult.poll.poll_options)) {
-            pollWithOptions = fetchResult.poll;
-            console.log('✅ Successfully fetched poll with options');
-          } else {
-            // Still no options, add them manually as last resort
-            console.error('❌ Backend does not return options - adding manually as fallback');
-            pollWithOptions.options = originalOptions;
-          }
-        } catch (fetchError) {
-          console.error('❌ Failed to fetch poll:', fetchError);
-          // Add options manually as last resort
-          pollWithOptions.options = originalOptions;
-        }
-      }
-
       return {
         success: true,
-        poll: pollWithOptions,
-        share: response.data.share,
+        poll: response.data.poll,
         message: 'Poll created successfully!'
       };
     } catch (err) {
       console.error('❌ Error creating poll:', err);
 
-      // ✅ Better error message handling
-      let errorMessage = 'Failed to create poll';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
       return {
         success: false,
-        message: errorMessage
+        message: err.response?.data?.message || err.message || 'Failed to create poll'
       };
     }
   }
@@ -151,7 +102,7 @@ class PollService {
 
       return {
         success: true,
-        poll: response.data.poll || response.data,
+        poll: response.data.poll,
         message: 'Poll updated successfully!'
       };
     } catch (err) {
@@ -159,7 +110,7 @@ class PollService {
 
       return {
         success: false,
-        message: err.response?.data?.message || err.message || 'Failed to update poll'
+        message: err.response?.data?.message || 'Failed to update poll'
       };
     }
   }
@@ -182,34 +133,95 @@ class PollService {
 
       return {
         success: false,
-        message: err.response?.data?.message || err.message || 'Failed to delete poll'
+        message: err.response?.data?.message || 'Failed to delete poll'
       };
     }
   }
 
   /**
-   * Get a single poll
+   * Get a single poll (with full details)
    * @param {string} pollId - Poll ID
    * @returns {Promise<Object>} Poll data
    */
   async getPoll(pollId) {
     try {
       const response = await API.get(`/polls/${pollId}`);
-      
-      console.log('📥 Fetched poll data:', response.data);
 
       return {
         success: true,
-        poll: response.data.poll || response.data
+        poll: response.data.poll
       };
     } catch (err) {
       console.error('❌ Error fetching poll:', err);
 
       return {
         success: false,
-        message: err.response?.data?.message || err.message || 'Failed to fetch poll'
+        message: err.response?.data?.message || 'Failed to fetch poll'
       };
     }
+  }
+
+  /**
+   * Get poll preview (for creator before publishing)
+   * @param {string} pollId - Poll ID
+   * @returns {Promise<Object>} Poll preview data
+   */
+  async getPollPreview(pollId) {
+    try {
+      const response = await API.get(`/polls/${pollId}/preview`);
+
+      return {
+        success: true,
+        poll: response.data.poll
+      };
+    } catch (err) {
+      console.error('❌ Error fetching poll preview:', err);
+
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Failed to fetch poll preview'
+      };
+    }
+  }
+
+  /**
+   * Format poll data for display
+   * @param {Object} poll - Raw poll data from API
+   * @returns {Object} Formatted poll data
+   */
+  formatPollForDisplay(poll) {
+    return {
+      id: poll.id,
+      question: poll.title,
+      description: poll.description || '',
+      options: poll.options?.map(opt => ({
+        id: opt.id,
+        text: opt.text || opt.option_text,
+        votes: opt.vote_count || 0
+      })) || [],
+      settings: {
+        isAnonymous: poll.settings?.isAnonymous || false,
+        allowMultiple: poll.settings?.allowMultiple || false,
+        showResults: poll.settings?.showResults || false,
+        visibility: poll.settings?.visibility || 'ALWAYS',
+        accessType: poll.settings?.accessType || 'PUBLIC'
+      },
+      theme: {
+        primaryColor: poll.theme?.primaryColor || '#137fec',
+        secondaryColor: poll.theme?.secondaryColor || '#ffffff',
+        selectedTheme: poll.theme?.selectedTheme || 'corporate',
+        logo: poll.theme?.logo || '',
+        backgroundImage: poll.theme?.backgroundImage || '',
+        fontStyle: poll.theme?.fontStyle || 'inter'
+      },
+      schedule: {
+        startDate: poll.schedule?.startDate || poll.start_date,
+        closeDate: poll.schedule?.closeDate || poll.end_date
+      },
+      createdBy: poll.created_by || poll.creator,
+      createdAt: poll.created_at,
+      totalVotes: poll.total_votes || 0
+    };
   }
 
   /**
@@ -222,14 +234,14 @@ class PollService {
 
       return {
         success: true,
-        polls: response.data.polls || response.data
+        polls: response.data.polls
       };
     } catch (err) {
       console.error('❌ Error fetching polls:', err);
 
       return {
         success: false,
-        message: err.response?.data?.message || err.message || 'Failed to fetch polls'
+        message: err.response?.data?.message || 'Failed to fetch polls'
       };
     }
   }
@@ -257,9 +269,6 @@ class PollService {
       img.onload = () => resolve(true);
       img.onerror = () => resolve(false);
       img.src = url;
-      
-      // Timeout to prevent hanging
-      setTimeout(() => resolve(false), 5000);
     });
   }
 }
