@@ -16,7 +16,10 @@ router.post('/:pollId/vote', optionalAuth, voteController.submitVote);
 // === 4. EDIT ROUTE ===
 router.put('/:id', authenticate, pollController.editPoll);
 
-// 5. Get Single (Must be last)
+// === 5. DELETE ROUTE ===
+router.delete('/:id', authenticate, pollController.deletePoll);
+
+// 6. Get Single (Must be last)
 router.get('/:id', optionalAuth, pollController.getPoll);
 
 

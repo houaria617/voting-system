@@ -5,13 +5,14 @@ import QuickStats from '../components/dashboard/QuickStats.jsx';
 import RecentActivity from '../components/dashboard/RecentActivity.jsx';
 import Pagination from '../components/dashboard/Pagination.jsx';
 import Button from '../components/common/Button.jsx';
-import { BarChart3 } from 'lucide-react';
 import '../styles/dashboard.css';
 import { useNavigate } from 'react-router-dom';
-import { fetchDashboardPolls } from '../api/pollApi';
+import { fetchDashboardPolls, fetchRecentActivities } from '../api/pollApi';
+import { FaPoll } from 'react-icons/fa';
 
 const DashboardPage = () => {
   const [polls, setPolls] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -29,6 +30,24 @@ const DashboardPage = () => {
         const data = await fetchDashboardPolls();
         console.log('📊 DASHBOARD JSON RESPONSE:', data);
         setPolls(data.polls || []);
+
+        // Fetch recent activities
+        const activities = await fetchRecentActivities(5);
+        const formattedActivities = activities.map((poll) => {
+          const createdDate = new Date(poll.created_at);
+          const timeAgo = getTimeAgo(createdDate);
+
+          return {
+            id: poll.id,
+            icon: FaPoll,
+            iconBg: 'bg-blue-500',
+            title: `Poll "${poll.title}" created`,
+            time: timeAgo,
+            status: poll.status
+          };
+        });
+
+        setRecentActivities(formattedActivities);
       } catch (error) {
         console.error('❌ Failed to load dashboard:', error);
       } finally {
@@ -39,7 +58,23 @@ const DashboardPage = () => {
     loadDashboard();
   }, []);
 
-  // Calculate polls for current page
+  // Helper function to format time ago
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const secondsAgo = Math.floor((now - date) / 1000);
+
+    if (secondsAgo < 60) return 'Just now';
+    if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+    if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+    if (secondsAgo < 604800) return `${Math.floor(secondsAgo / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+  };
+
+  // Handle poll deletion
+  const handlePollDeleted = (pollId) => {
+    setPolls((prevPolls) => prevPolls.filter((p) => p.id !== pollId));
+  };
   const indexOfLastPoll = currentPage * pollsPerPage;
   const indexOfFirstPoll = indexOfLastPoll - pollsPerPage;
   const currentPolls = polls.slice(indexOfFirstPoll, indexOfLastPoll);
@@ -73,7 +108,11 @@ const DashboardPage = () => {
 
                 {!loading &&
                   currentPolls.map((poll) => (
-                    <PollItem key={poll.id} poll={poll} />
+                    <PollItem 
+                      key={poll.id} 
+                      poll={poll}
+                      onPollDeleted={handlePollDeleted}
+                    />
                   ))}
               </div>
 
@@ -87,7 +126,7 @@ const DashboardPage = () => {
               )}
             </div>
 
-            {/* ===== Right Sidebar ===== */}
+            {/* ===== Right Sidebar (Stats and Recent Activity) ===== */}
             <div className="sidebar-section">
               <QuickStats
                 stats={[
@@ -104,11 +143,8 @@ const DashboardPage = () => {
               />
 
               <RecentActivity
-                activities={polls.slice(0, 5).map((poll) => ({
-                  id: poll.id,
-                  message: `Poll "${poll.title}" created`,
-                  date: poll.created_at,
-                }))}
+                activities={recentActivities}
+                isLoading={loading}
               />
             </div>
           </div>

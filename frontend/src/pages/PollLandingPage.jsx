@@ -6,6 +6,7 @@ import PollActions from '../components/pollLanding/PollActions';
 import pollService from '../services/pollService';
 import '../styles/pollLanding.css';
 import Swal from 'sweetalert2';
+
 const PollLandingPage = () => {
   const { pollId } = useParams();
   const navigate = useNavigate();
@@ -150,27 +151,28 @@ const PollLandingPage = () => {
             options={pollData.options}
             selectedOption={selectedOption}
             onOptionChange={handleOptionChange}
+            // Add this line so the button inside PollQuestion works:
+            onSubmit={handleVote} 
+            // Optional: Pass voting status if PollQuestion needs to hide the button
+            hasVoted={pollData.userHasVoted} 
           />
 
-          {!pollData.userHasVoted ? (
-            <div className="vote-section">
-              <button onClick={handleVote} className="vote-button">
-                Submit Vote
-              </button>
-            </div>
-          ) : (
-            <div className="voted-message">
-              <p>You have already voted on this poll.</p>
-              <button onClick={() => navigate(`/poll/${pollId}/results`)} className="results-button">
-                View Results
-              </button>
-            </div>
-          )}
+          <div className="poll-actions-section">
+            {/* 
+               REMOVED THE DUPLICATE BUTTON CODE HERE.
+               Only the "already voted" message remains.
+            */}
+            {pollData.userHasVoted && (
+              <div className="voted-message">
+                <p>You have already voted on this poll.</p>
+              </div>
+            )}
 
-          <PollActions
-            onEditPoll={handleEditPoll}
-            onSharePoll={handleSharePoll}
-          />
+            <PollActions
+              onEditPoll={handleEditPoll}
+              onSharePoll={handleSharePoll}
+            />
+          </div>
         </div>
       </main>
     </div>

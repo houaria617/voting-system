@@ -244,9 +244,38 @@ const editPoll = async (req, res) => {
     }
 };
 
+// =======================================================
+// 5. DELETE POLL
+// =======================================================
+const deletePoll = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const poll = await pollModel.getPollById(id);
+        if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+        if (poll.creator_id !== userId) {
+            return res.status(403).json({ message: "You are not authorized to delete this poll." });
+        }
+
+        await pollModel.deletePoll(id);
+
+        res.json({
+            message: "Poll deleted successfully",
+            deletedPollId: id
+        });
+
+    } catch (err) {
+        console.error("Delete Poll Error:", err);
+        res.status(500).json({ message: "Server Error deleting poll" });
+    }
+};
+
 module.exports = {
     createPoll,
     getPoll,
     getDashboard,
-    editPoll
+    editPoll,
+    deletePoll
 };
