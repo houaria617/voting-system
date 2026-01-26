@@ -1,0 +1,61 @@
+import API from './axiosConfig';
+
+// Fetch polls for dashboard
+export const fetchDashboardPolls = async () => {
+  const response = await API.get('/polls/dashboard');
+  return response.data; // { count, polls }
+};
+
+// Fetch recent activities (polls created by current user)
+export const fetchRecentActivities = async (limit = 5) => {
+  try {
+    const response = await API.get('/polls/dashboard');
+    const polls = response.data.polls || [];
+
+    // Sort by creation date (newest first) and limit results
+    const sortedPolls = [...polls]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, limit);
+
+    return sortedPolls;
+  } catch (error) {
+    console.error('❌ Error fetching recent activities:', error);
+    return [];
+  }
+};
+
+// Edit poll
+export const editPoll = async (pollId, updateData) => {
+  try {
+    const response = await API.put(`/polls/${pollId}`, updateData);
+    return {
+      success: true,
+      poll: response.data.poll,
+      message: response.data.message
+    };
+  } catch (error) {
+    console.error('❌ Error editing poll:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Failed to edit poll'
+    };
+  }
+};
+
+// Delete poll
+export const deletePoll = async (pollId) => {
+  try {
+    const response = await API.delete(`/polls/${pollId}`);
+    return {
+      success: true,
+      message: response.data.message,
+      deletedPollId: pollId
+    };
+  } catch (error) {
+    console.error('❌ Error deleting poll:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message || 'Failed to delete poll'
+    };
+  }
+};
