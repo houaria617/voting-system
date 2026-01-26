@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../../styles/Login.css';
-import authService from '../../services/authService'; // Import service
+import authService from '../../services/authService';
 import Swal from 'sweetalert2';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -9,7 +9,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     emailOrUsername: '',
     password: ''
@@ -74,7 +74,7 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.emailOrUsername.trim()) {
       newErrors.emailOrUsername = 'Email or username is required';
     } else if (formData.emailOrUsername.trim().length < 3) {
@@ -96,14 +96,12 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ UPDATED: Call authService instead of direct navigation
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validateForm()) {
       setIsLoading(true);
 
-      // Call the service (all business logic)
       const result = await authService.login(
         formData.emailOrUsername,
         formData.password
@@ -112,18 +110,15 @@ const Login = () => {
       setIsLoading(false);
 
       if (result.success) {
-        // Success!
         Swal.fire({
           icon: 'success',
           title: 'Login Successful!',
           text: `Welcome back, ${result.user.name}!`,
           timer: 2000
         });
-        
-        // Navigate to dashboard
+
         navigate('/dashboard');
       } else {
-        // Failed
         Swal.fire({
           icon: 'error',
           title: 'Login Failed',
@@ -185,9 +180,7 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
               >
-                {showPassword 
-                ? <FaEye />
-                : <FaEyeSlash />}
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
             {touched.password && errors.password && (
@@ -199,8 +192,8 @@ const Login = () => {
             <Link to="/forgot-password">Forgot Password?</Link>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="login-button"
             disabled={isLoading}
           >
@@ -208,14 +201,7 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="divider">Or continue with</div>
-
-        <div className="social-buttons">
-          <button className="social-button google-button" disabled={isLoading}>
-            <span className="google-icon">G</span>
-            Google
-          </button>
-        </div>
+        
       </div>
     </div>
   );
