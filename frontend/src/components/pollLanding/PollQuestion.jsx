@@ -7,7 +7,9 @@ const PollQuestion = ({
   description, 
   options, 
   selectedOption, 
-  onOptionChange 
+  onOptionChange,
+  onSubmit,
+  hasVoted
 }) => {
   return (
     <div className="poll-question-card">
@@ -30,12 +32,15 @@ const PollQuestion = ({
         ))}
       </div>
 
-      <button 
-        className="submit-button"
-        disabled={!selectedOption}
-      >
-        Submit Vote
-      </button>
+      {!hasVoted && (
+        <button 
+          className="submit-button"
+          onClick={onSubmit}
+          disabled={!selectedOption}
+        >
+          Submit Vote
+        </button>
+      )}
     </div>
   );
 };

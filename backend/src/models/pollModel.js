@@ -97,6 +97,17 @@ const updatePoll = async (pollId, updateData) => {
     return data;
 };
 
+// 8. Delete Poll
+const deletePoll = async (pollId) => {
+    const { data, error } = await supabase
+        .from('polls')
+        .delete()
+        .eq('id', pollId);
+
+    if (error) throw error;
+    return data;
+};
+
 module.exports = {
     createPoll,
     addPollOptions,
@@ -104,6 +115,7 @@ module.exports = {
     addAllowedVoters,
     isUserAllowed,
     getUserPolls,
-    updatePoll
+    updatePoll,
+    deletePoll
 };
 
