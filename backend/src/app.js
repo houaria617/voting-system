@@ -9,11 +9,16 @@ const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
 
-// FIXED CORS - Add this before other middleware
+// FIXED CORS CONFIGURATION
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  // We use an array to allow multiple origins
+  origin: [
+    "https://voting-system-cnn7.onrender.com", // Your Deployed Frontend (CRITICAL)
+    "http://localhost:5173",                   // Your Local Frontend
+    "http://localhost:3000"                    // Backup Local
+  ],
   credentials: true,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 200 // 200 is often safer than 204 for some browsers
 };
 
 app.use(cors(corsOptions));
